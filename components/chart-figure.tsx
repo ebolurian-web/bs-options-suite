@@ -17,12 +17,22 @@ export type ChartFigureProps = {
   description: string;
   /** Render-prop for the visual chart (Plotly, etc.). */
   children: React.ReactNode;
-  /** Keyboard-accessible data-table alternative. Always required. */
-  dataTable: {
+  /**
+   * Keyboard-accessible data-table alternative. Omit only when the chart
+   * itself is accessible (inline SVG with role="img" + aria-label) AND the
+   * figcaption description names all key data points.
+   */
+  dataTable?: {
     caption: string;
     headers: string[];
     rows: (string | number)[][];
   };
+  /**
+   * Whether to mark the chart region as aria-hidden. Default true because
+   * most chart libraries (Plotly, canvas) don't expose semantic content.
+   * Set false when the child is a semantic SVG carrying its own role/label.
+   */
+  chartAriaHidden?: boolean;
   className?: string;
 };
 
@@ -32,6 +42,7 @@ export function ChartFigure({
   description,
   children,
   dataTable,
+  chartAriaHidden = true,
   className = "",
 }: ChartFigureProps) {
   const titleId = `${id}-title`;
@@ -65,10 +76,11 @@ export function ChartFigure({
         </p>
       </figcaption>
 
-      <div aria-hidden="true" className="px-2 py-2">
+      <div aria-hidden={chartAriaHidden ? "true" : undefined} className="px-2 py-2">
         {children}
       </div>
 
+      {dataTable && (
       <details className="group border-t" style={{ borderColor: "var(--color-border)" }}>
         <summary
           className="cursor-pointer px-4 py-2 text-xs"
@@ -118,6 +130,7 @@ export function ChartFigure({
           </table>
         </div>
       </details>
+      )}
     </figure>
   );
 }

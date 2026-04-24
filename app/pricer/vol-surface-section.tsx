@@ -161,7 +161,11 @@ function SurfacePanel({ surface }: { surface: VolSurface }) {
     <ChartFigure
       id="vol-surface"
       title="3D Implied Volatility Surface"
-      description={`${surface.summary} Use the chart toolbar to rotate or zoom. Full data available in the table below.`}
+      description={
+        `This 3D surface shows what volatility the options market expects for ${surface.ticker} at every combination of strike price and time to expiry. ` +
+        `Higher peaks mean traders are paying up for uncertainty; dips mean they're pricing calm. ` +
+        `${surface.summary} Use the toolbar to rotate or zoom; the summary table below has the exact numbers.`
+      }
       dataTable={{
         caption: "Implied volatility summary by expiry",
         headers: ["Expiry", "Days", "ATM IV", "Min IV", "Max IV", "Strikes"],

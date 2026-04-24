@@ -200,29 +200,57 @@ export function PricerView() {
             value={result ? fmt(result.greeks.deltaCall, 4) : "—"}
             tone="accent"
             hint={`Put: ${result ? fmt(result.greeks.deltaPut, 4) : "—"}`}
+            helpLabel="Show Delta explanation"
+            helpContent={
+              <>
+                <strong>Delta</strong> tells you how much the option's price moves for every
+                <strong> $1 change</strong> in the stock. A call with Δ = 0.50 gains about $0.50 if the
+                stock rises $1. Call deltas go from 0 (unlikely to finish in the money) to 1 (deep in the
+                money); put deltas are negative and go from 0 to −1.
+              </>
+            }
           />
           <StatTile
             term="Gamma"
             value={result ? fmt(result.greeks.gamma, 4) : "—"}
             tone="warn"
             hint="Shared call/put"
+            helpLabel="Show Gamma explanation"
+            helpContent={
+              <>
+                <strong>Gamma</strong> is the "acceleration" of Delta — how fast Delta changes as the stock
+                moves. High Gamma near expiry means small moves in the stock can flip the option quickly
+                between in-the-money and out-of-the-money.
+              </>
+            }
           />
           <StatTile
             term="Theta / day (call)"
             value={result ? fmt(result.greeks.thetaCallPerDay, 4) : "—"}
             tone="error"
             hint={`Put: ${result ? fmt(result.greeks.thetaPutPerDay, 4) : "—"}`}
+            helpLabel="Show Theta explanation"
+            helpContent={
+              <>
+                <strong>Theta</strong> is how much value the option loses each day just from the clock
+                ticking down, holding everything else constant. A Theta of −0.05 means the option loses
+                about 5¢ per day. It's the "rent" of owning an option.
+              </>
+            }
           />
           <StatTile
             term="Vega / 1%"
             value={result ? fmt(result.greeks.vegaPer1Pct, 4) : "—"}
             tone="accent"
             hint="Per 1% σ move"
-          />
-          <StatTile
-            term="Rho / 1% (call)"
-            value={result ? fmt(result.greeks.rhoCallPer1Pct, 4) : "—"}
-            hint={`Put: ${result ? fmt(result.greeks.rhoPutPer1Pct, 4) : "—"}`}
+            helpLabel="Show Vega explanation"
+            helpContent={
+              <>
+                <strong>Vega</strong> is how sensitive the option is to changes in <em>implied volatility</em> —
+                the market's expectation of how much the stock will move. A Vega of 0.20 means the option
+                gains about 20¢ if expected volatility rises by 1 percentage point.
+              </>
+            }
           />
         </StatsGrid>
       </section>

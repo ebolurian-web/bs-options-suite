@@ -258,17 +258,29 @@ export function classifyTermStructure(surface: VolSurface): {
 }
 
 function buildSummary(ticker: string, slices: ExpirySlice[]): string {
-  if (!slices.length) return `No vol surface data for ${ticker}.`;
+  if (!slices.length) return `No options-chain data available for ${ticker}.`;
   const front = slices[0];
   const back = slices[slices.length - 1];
-  const frontAtm = front.atmIV != null ? `${(front.atmIV * 100).toFixed(1)}%` : "n/a";
-  const backAtm = back.atmIV != null ? `${(back.atmIV * 100).toFixed(1)}%` : "n/a";
-  let termStructure = "flat";
-  if (front.atmIV != null && back.atmIV != null) {
-    if (back.atmIV > front.atmIV * 1.03) termStructure = "rising (contango)";
-    else if (back.atmIV < front.atmIV * 0.97) termStructure = "falling (backwardation)";
+  const frontAtm = front.atmIV != null ? `${(front.atmIV * 100).toFixed(1)}%` : null;
+  const backAtm = back.atmIV != null ? `${(back.atmIV * 100).toFixed(1)}%` : null;
+  const frontDays = Math.round(front.dte);
+  const backDays = Math.round(back.dte);
+
+  if (frontAtm == null || backAtm == null) {
+    return `The market is pricing options on ${ticker} across ${slices.length} expiry dates, from ${frontDays} to ${backDays} days out.`;
   }
-  return `Volatility surface for ${ticker} across ${slices.length} expiries. Front-month ATM IV ${frontAtm}; furthest expiry ATM IV ${backAtm}. Term structure is ${termStructure}.`;
+
+  const frontPct = front.atmIV!;
+  const backPct = back.atmIV!;
+  let trend: string;
+  if (backPct > frontPct * 1.03) {
+    trend = `rising to ${backAtm} for the ${backDays}-day expiry — the market expects more uncertainty further out (contango)`;
+  } else if (backPct < frontPct * 0.97) {
+    trend = `falling to ${backAtm} for the ${backDays}-day expiry — near-term uncertainty is priced higher than the long term (backwardation)`;
+  } else {
+    trend = `holding near ${backAtm} for the ${backDays}-day expiry — roughly flat across time`;
+  }
+  return `The market is pricing short-term ${ticker} options at ${frontAtm} expected annual volatility (${frontDays} days out), ${trend}. Built from ${slices.length} expiry dates in the live chain.`;
 }
 
 function formatExpiryLabel(iso: string, dte: number): string {
