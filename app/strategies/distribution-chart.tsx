@@ -148,8 +148,60 @@ export function DistributionChart({ legs, spot, volatility, popPercent, breakEve
     `${(volatility * 100).toFixed(1)}% annual volatility. Green area = scenarios where your strategy profits (${popPercent.toFixed(1)}% of outcomes); ` +
     `red = loss scenarios.`;
 
+  // Quantile table from the log-normal distribution (p5, p25, p50, p75, p95).
+  // Also include each break-even so AT users see the key decision thresholds.
+  const sigT = volatility * Math.sqrt(T);
+  const mu = Math.log(spot) - 0.5 * volatility * volatility * T;
+  const normInv = (p: number): number => {
+    // Beasley-Springer-Moro inverse normal CDF
+    const a = [-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.383577518672690e2, -3.066479806614716e1, 2.506628277459239];
+    const b = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1];
+    const c = [-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
+    const pLow = 0.02425;
+    const pHigh = 1 - pLow;
+    let q: number, r: number;
+    if (p < pLow) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+        ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    } else if (p <= pHigh) {
+      q = p - 0.5;
+      r = q * q;
+      return ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) /
+        (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+        ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+  };
+  const quantilePrice = (p: number) => Math.exp(mu + sigT * normInv(p));
+  const quantileRows: (string | number)[][] = [
+    ["5%", `$${quantilePrice(0.05).toFixed(2)}`, "Downside tail"],
+    ["25%", `$${quantilePrice(0.25).toFixed(2)}`, "Lower quartile"],
+    ["50%", `$${quantilePrice(0.5).toFixed(2)}`, "Median"],
+    ["75%", `$${quantilePrice(0.75).toFixed(2)}`, "Upper quartile"],
+    ["95%", `$${quantilePrice(0.95).toFixed(2)}`, "Upside tail"],
+  ];
+  const breakEvenRows: (string | number)[][] = breakEvens.map((be, i) => [
+    `BE #${i + 1}`,
+    `$${be.toFixed(2)}`,
+    "Break-even",
+  ]);
+  const dataTable = {
+    caption: `Log-normal price distribution at expiry (${days} days, ${(volatility * 100).toFixed(1)}% vol) with break-even thresholds`,
+    headers: ["Point", "Expected price", "Role"],
+    rows: [...quantileRows, ...breakEvenRows],
+  };
+
   return (
-    <ChartFigure id="dist" title="Probability Distribution at Expiry" description={description}>
+    <ChartFigure
+      id="dist"
+      title="Probability Distribution at Expiry"
+      description={description}
+      dataTable={dataTable}
+    >
       <PlotlyChart data={traces} layout={layout} relayoutForTheme={makeLayout} style={{ height: 340 }} />
     </ChartFigure>
   );

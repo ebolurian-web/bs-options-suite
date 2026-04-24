@@ -3,9 +3,16 @@ import { SiteHeader } from "@/components/site-header";
 import { StrategiesView } from "./strategies-view";
 
 export const metadata: Metadata = {
-  title: "Strategy Builder — BS Options Suite",
+  title: "Strategy Builder",
   description:
-    "Build multi-leg options strategies. Combined payoff, probability of profit, and net position Greeks.",
+    "Build multi-leg options strategies. Combined payoff at expiry, probability of profit, net position Greeks, shareable links.",
+  alternates: { canonical: "/strategies" },
+  openGraph: {
+    title: "Strategy Builder — BS Options Suite",
+    description:
+      "Multi-leg options strategies with live market data, combined payoff, and net position Greeks.",
+    url: "/strategies",
+  },
 };
 
 export default function StrategiesPage() {

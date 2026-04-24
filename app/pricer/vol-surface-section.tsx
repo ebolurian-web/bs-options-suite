@@ -6,6 +6,7 @@ import { ChartFigure } from "@/components/chart-figure";
 import { PlotlyChart } from "@/components/plotly-chart";
 import { StatsGrid, StatTile } from "@/components/stats-grid";
 import { mergeLayout, plotly3DScene } from "@/lib/plotly-theme";
+// (vol-surface-section migrated to shared theme + ChartFigure data tables; see lib/plotly-theme.ts)
 import {
   buildSurfaceGrid,
   classifyTermStructure,

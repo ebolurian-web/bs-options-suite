@@ -1,72 +1,108 @@
-# bs-options-suite
+# BS Options Suite
 
-Black-Scholes options pricing suite — live market data, 3D volatility surface, multi-leg strategy builder.
+[![Live](https://img.shields.io/badge/live-options.bolurian.com-00d084)](https://options.bolurian.com) [![Stack](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org)
 
-Built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS v4**, and **Polygon.io** market data. Deployed on Vercel.
+Black-Scholes options pricing suite with live market data, a 3-D volatility surface, and a multi-leg strategy builder.
+
+**Live:** https://options.bolurian.com
+**Built by:** [Eden Bolurian](https://bolurian.com)
 
 ---
 
 ## Features
 
-### Pricer
-- Black-Scholes pricing with Merton dividend extension
-- Full Greeks: Δ, Γ, Θ, ν, ρ
-- Newton-Raphson implied volatility solver
-- Live options chain (click-to-load into the model)
-- Time-decay animation — watch Greeks deform toward expiry
-- Put-call parity verification
+### Pricer (`/pricer`)
+- Black-Scholes pricing with Merton dividend extension, full Greeks (Δ Γ Θ ν)
+- Live options chains via CBOE public delayed quotes (no auth, single-call full chain)
+- Newton-Raphson implied volatility solver with bisection fallback
+- **3-D volatility surface** — moneyness × DTE × IV, with per-expiry smile and 25Δ skew/term-structure analytics
+- **Historical vol cone** — rolling realized vol percentiles (20/60/120-day) vs current IV, plus HV rank and percentile
+- Interactive payoff diagram with hover crosshair
+- Plain-English explanations for every Greek
+- `Manual overrides` disclosure for scenario analysis
 
-### Volatility Analytics
-- Interactive 3D volatility surface (moneyness × DTE × IV)
-- Per-expiry smile with polynomial fit
-- 25-delta risk reversal, butterfly, term-structure analytics
-- Historical vs implied volatility cone + IV rank/percentile
+### Strategy Builder (`/strategies`)
+- 11 pre-built strategies (Long Call/Put, Covered Call, Iron Condor, Butterflies, Straddle/Strangle, etc.)
+- Editable legs table with per-cell inputs
+- Combined payoff at expiry with hover crosshair
+- Log-normal probability distribution chart
+- **Net position Greeks** aggregated across all legs (Δ, Γ, Θ, ν)
+- **Shareable URLs** via `?s=base64` encoding
+- **Saved strategies** persisted to localStorage
 
-### Strategy Builder
-- 12 pre-built strategies (spreads, condors, straddles, etc.)
-- Combined payoff diagram at expiry with break-even detection
-- Net position Greeks (Δ, Γ, Θ, ν) across all legs
-- Log-normal probability of profit simulation
-- Saved strategies with shareable URLs
+---
+
+## Accessibility
+
+WCAG 2.2 AA target. Built a11y-first:
+
+- Every chart ships with a keyboard-accessible data-table alternative inside `<details>`
+- `prefers-reduced-motion` disables backdrop drift, hover lifts, glows, and in-chart animations
+- Dark-first palette with verified 4.5:1 text and 3:1 UI contrast
+- Full keyboard operability; 2 px focus outline + 4 px glow
+- Single polite live region for strategy/ticker updates; debounced summaries, no per-tile spam
+- Plain-language Greek explanations with `aria-expanded` disclosures (not hover-only tooltips)
+- Skip link, semantic heading hierarchy, per-cell `aria-label` on editable tables
 
 ---
 
 ## Data
 
-Options chains: **CBOE public delayed quotes** (`cdn.cboe.com/api/global/delayed_quotes/options/`) — free, no auth, full chain with Greeks and IV for every expiry in a single call.
-Stock quotes: **Polygon.io** free tier — prices, 52-week range, historical aggregates for realized-volatility calculation.
-Fallback: **Marketdata.app** anonymous tier.
-Always-on: committed JSON snapshots for SPY + AAPL so the site works with zero external connectivity.
+Primary: **CBOE public delayed quotes** (`cdn.cboe.com/api/global/delayed_quotes/options/`) — free, no auth, full chain with Greeks and IV in a single request, ~15-minute delay.
 
-Server-side API routes proxy all requests — no CORS dance, no client-side API keys.
+Stock history: **Polygon.io** free tier — 1-year daily aggregates for realized volatility and the vol cone.
+
+Fallback: **Marketdata.app** anonymous endpoint.
+
+All requests are proxied through Next.js API routes — no CORS, no client-exposed keys.
+
+---
+
+## Stack
+
+- **Next.js 16** (App Router, Turbopack, React 19)
+- **TypeScript 5**
+- **Tailwind CSS v4** + design tokens in CSS custom properties
+- **Plotly.js** (dynamically imported; 3-D surface, smile, skew, distribution, vol cone)
+- **Vercel** (deploy target)
 
 ---
 
 ## Development
 
 ```bash
-nvm use               # Node 20
+nvm use                                # Node 20
 cp .env.example .env.local
-# Fill in POLYGON_API_KEY in .env.local
+# Add POLYGON_API_KEY to .env.local
 npm install
-npm run dev           # http://localhost:3000
+npm run dev                            # http://localhost:3000
 ```
 
 ## Production
 
 ```bash
-npm run build && npm start
+npm run build
+npm start
 ```
-
-Deployed on Vercel. Environment variables configured in the Vercel dashboard mirror `.env.example`.
 
 ---
 
-## Accessibility
+## Deployment
 
-WCAG 2.2 AA target. `prefers-reduced-motion` respected on every animation.
-Data visualizations ship with keyboard-accessible data-table alternatives.
-Dark-first theme with opt-in light mode.
+Deployed to **Vercel** at `options.bolurian.com` (CNAME from GoDaddy).
+
+To deploy your own fork:
+
+1. **Push to GitHub** (this repo), then go to https://vercel.com/new and import it.
+2. **Environment variables** in Vercel → Settings → Environment Variables:
+   - `POLYGON_API_KEY` — your Polygon.io free-tier key (required)
+   - `MARKETDATA_API_TOKEN` — optional; empty is fine
+   - `NEXT_PUBLIC_ENABLE_LIVE_DATA` — `true`
+3. **Custom domain** (optional):
+   - Vercel → Settings → Domains → add `options.yourdomain.com`
+   - Copy the CNAME target Vercel provides (e.g., `cname.vercel-dns.com`)
+   - In your DNS provider, add a CNAME record: `options` → `cname.vercel-dns.com`
+4. Wait ~60 seconds for DNS and Vercel SSL provisioning.
 
 ---
 

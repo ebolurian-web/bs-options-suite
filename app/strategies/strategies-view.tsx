@@ -45,6 +45,10 @@ export function StrategiesView() {
   const [saved, setSaved] = useState<SavedStrategy[]>([]);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const shareInputRef = useRef<HTMLInputElement | null>(null);
+  // Suppress the debounced "Strategy updated…" announcement once after URL
+  // hydration so AT users don't hear the hydration + the debounced summary
+  // back-to-back.
+  const suppressNextSummaryRef = useRef(false);
 
   // Market / assumptions
   const [ticker, setTicker] = useState("");
@@ -254,6 +258,7 @@ export function StrategiesView() {
       setAnnouncement("Shared strategy link could not be decoded.");
       return;
     }
+    suppressNextSummaryRef.current = true;
     setSpot(decoded.spot);
     setVolPct(decoded.volPct);
     setRPct(decoded.rPct);
@@ -333,6 +338,12 @@ export function StrategiesView() {
   useEffect(() => {
     if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
     if (!legs.length) return;
+    if (suppressNextSummaryRef.current) {
+      // URL hydration already announced "Loaded shared strategy — …"; skip
+      // the debounced summary for this pass so we don't double-speak.
+      suppressNextSummaryRef.current = false;
+      return;
+    }
     announceTimerRef.current = setTimeout(() => {
       const msg =
         `Strategy updated. ${legs.length} leg${legs.length === 1 ? "" : "s"}, ` +
@@ -861,7 +872,6 @@ function AssumptionBadge({
       </dt>
       <dd
         id={id}
-        aria-live="polite"
         className="font-mono text-sm font-semibold tabular-nums"
         style={{ color: "var(--color-fg-default)" }}
       >
@@ -924,7 +934,6 @@ function LegsSection({
 
       {legs.length === 0 ? (
         <div
-          role="status"
           className="p-8 text-center text-sm"
           style={{ color: "var(--color-fg-muted)" }}
         >

@@ -18,7 +18,7 @@
   /* Text */
   --color-fg-default: #ededed;
   --color-fg-muted: #a1a1a1;
-  --color-fg-subtle: #737373;
+  --color-fg-subtle: #8a8a8a; /* 5.0:1 on #0a0a0a, 4.85:1 on #111 — passes AA for body */
 
   /* Accents */
   --color-accent: #00d084;

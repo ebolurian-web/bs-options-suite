@@ -67,8 +67,6 @@ export function ChartFigure({
         </h3>
         <p
           id={descId}
-          aria-live="polite"
-          aria-atomic="true"
           className="mt-0.5 text-xs"
           style={{ color: "var(--color-fg-muted)" }}
         >

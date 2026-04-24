@@ -19,7 +19,6 @@ export function StatsGrid({
 }) {
   return (
     <dl
-      role="group"
       aria-labelledby={labelledBy}
       className={`grid grid-cols-2 gap-2 md:grid-cols-4 ${className}`}
     >

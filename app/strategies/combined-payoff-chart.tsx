@@ -56,7 +56,6 @@ export function CombinedPayoffChart({ legs, spot }: CombinedPayoffChartProps) {
   if (!data || !legs.length) {
     return (
       <div
-        role="status"
         className="flex min-h-[280px] flex-col items-center justify-center rounded-md border p-8 text-center"
         style={{
           background: "var(--color-surface-1)",

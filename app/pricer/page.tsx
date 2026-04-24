@@ -3,9 +3,16 @@ import { SiteHeader } from "@/components/site-header";
 import { PricerView } from "./pricer-view";
 
 export const metadata: Metadata = {
-  title: "Pricer — BS Options Suite",
+  title: "Pricer",
   description:
-    "Black-Scholes pricing with full Greeks, IV solver, and payoff diagram.",
+    "Price calls and puts with live market data. Full Greeks, 3D volatility surface, smile and skew analytics, and a historical vol cone.",
+  alternates: { canonical: "/pricer" },
+  openGraph: {
+    title: "Pricer — BS Options Suite",
+    description:
+      "Price calls and puts with live market data. Full Greeks and a 3D volatility surface.",
+    url: "/pricer",
+  },
 };
 
 export default function PricerPage() {
@@ -31,8 +38,7 @@ export default function PricerPage() {
             Black-Scholes Pricer
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--color-fg-muted)" }}>
-            Price calls and puts, explore Greeks, and solve for implied volatility.
-            Live market data coming in Phase 2 — enter parameters manually for now.
+            Enter a ticker to load live market data, or expand Manual overrides below to price from scratch.
           </p>
         </header>
         <PricerView />
