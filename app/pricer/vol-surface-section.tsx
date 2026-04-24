@@ -88,7 +88,7 @@ export function VolSurfaceSection({ surface }: { surface: VolSurface }) {
   );
 }
 
-// ── 3D SURFACE ────────────────────────────────────────────────────────
+// -- 3D SURFACE --------------------------------------------------------
 
 function SurfacePanel({ surface }: { surface: VolSurface }) {
   const grid = useMemo(() => buildSurfaceGrid(surface), [surface]);
@@ -173,7 +173,7 @@ function SurfacePanel({ surface }: { surface: VolSurface }) {
   );
 }
 
-// ── SMILE ─────────────────────────────────────────────────────────────
+// -- SMILE -------------------------------------------------------------
 
 function SmilePanel({ surface }: { surface: VolSurface }) {
   const [idx, setIdx] = useState(0);
@@ -330,7 +330,7 @@ function SmilePanel({ surface }: { surface: VolSurface }) {
   );
 }
 
-// ── SKEW / TERM STRUCTURE ──────────────────────────────────────────────
+// -- SKEW / TERM STRUCTURE ----------------------------------------------
 
 function SkewPanel({
   surface,

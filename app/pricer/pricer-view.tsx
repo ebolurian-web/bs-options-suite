@@ -20,7 +20,7 @@ const formatParity = (p: number): string =>
   Math.abs(p) < 1e-10 ? "0.0e+0" : p.toExponential(1);
 
 export function PricerView() {
-  // ── Market data state ─────────────────────────────────────────────
+  // -- Market data state ---------------------------------------------
   const [chain, setChain] = useState<OptionChain | null>(null);
   const [history, setHistory] = useState<HistoricalSeries | null>(null);
   const [volSurface, setVolSurface] = useState<VolSurface | null>(null);
@@ -30,7 +30,7 @@ export function PricerView() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // ── Pricing inputs ────────────────────────────────────────────────
+  // -- Pricing inputs ------------------------------------------------
   // Seeded from live data when available; editable via Manual overrides.
   const [S, setS] = useState(100);
   const [K, setK] = useState(100);
@@ -55,7 +55,7 @@ export function PricerView() {
       )
     : null;
 
-  // ── Ticker load ───────────────────────────────────────────────────
+  // -- Ticker load ---------------------------------------------------
   const loadTicker = useCallback(async (ticker: string) => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
@@ -157,7 +157,7 @@ export function PricerView() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* HERO ───────────────────────────────────────────────────────── */}
+      {/* HERO --------------------------------------------------------- */}
       <HeroQuote
         ticker={chain?.ticker ?? null}
         companyName={null}
@@ -170,7 +170,7 @@ export function PricerView() {
         moneyness={contractLoaded ? moneyness : null}
       />
 
-      {/* CONTRACT BAR ───────────────────────────────────────────────── */}
+      {/* CONTRACT BAR ------------------------------------------------- */}
       <ContractBar
         onSubmit={loadTicker}
         busy={busy}
@@ -185,7 +185,7 @@ export function PricerView() {
         ageMs={chain?.ageMs ?? null}
       />
 
-      {/* GREEKS ─────────────────────────────────────────────────────── */}
+      {/* GREEKS ------------------------------------------------------- */}
       <section aria-labelledby="h-greeks">
         <h2
           id="h-greeks"
@@ -227,14 +227,14 @@ export function PricerView() {
         </StatsGrid>
       </section>
 
-      {/* σ OVERRIDE STRIP ──────────────────────────────────────────── */}
+      {/* σ OVERRIDE STRIP -------------------------------------------- */}
       <SigmaOverrideStrip
         sigmaPct={sigmaPct}
         onSigmaChange={setSigmaPct}
         baselineSigmaPct={baselineSigmaPct}
       />
 
-      {/* CONTEXT ROW ────────────────────────────────────────────────── */}
+      {/* CONTEXT ROW -------------------------------------------------- */}
       <section
         aria-labelledby="h-context"
         className="rounded-md border p-3"
@@ -262,7 +262,7 @@ export function PricerView() {
         </dl>
       </section>
 
-      {/* PAYOFF ─────────────────────────────────────────────────────── */}
+      {/* PAYOFF ------------------------------------------------------- */}
       <section aria-labelledby="h-payoff">
         <h2
           id="h-payoff"
@@ -274,10 +274,10 @@ export function PricerView() {
         <PayoffChart S={S} K={K} callPremium={result?.call ?? 0} putPremium={result?.put ?? 0} />
       </section>
 
-      {/* VOL SURFACE ────────────────────────────────────────────────── */}
+      {/* VOL SURFACE -------------------------------------------------- */}
       {volSurface && volSurface.expirations.length > 0 && <VolSurfaceSection surface={volSurface} />}
 
-      {/* REALIZED VOL CONTEXT ───────────────────────────────────────── */}
+      {/* REALIZED VOL CONTEXT ----------------------------------------- */}
       {history?.realizedVol != null && (
         <p
           className="text-center text-[0.72rem]"
@@ -290,7 +290,7 @@ export function PricerView() {
         </p>
       )}
 
-      {/* MANUAL OVERRIDES ───────────────────────────────────────────── */}
+      {/* MANUAL OVERRIDES --------------------------------------------- */}
       <details
         className="rounded-md border"
         style={{ background: "var(--color-surface-1)", borderColor: "var(--color-border)" }}
@@ -316,7 +316,7 @@ export function PricerView() {
   );
 }
 
-// ── SIGMA OVERRIDE STRIP ────────────────────────────────────────────
+// -- SIGMA OVERRIDE STRIP --------------------------------------------
 
 function SigmaOverrideStrip({
   sigmaPct,
@@ -414,7 +414,7 @@ function SigmaOverrideStrip({
   );
 }
 
-// ── MINI TILE ───────────────────────────────────────────────────────
+// -- MINI TILE -------------------------------------------------------
 
 function Mini({
   label,
@@ -459,7 +459,7 @@ function Mini({
   );
 }
 
-// ── HELPERS ─────────────────────────────────────────────────────────
+// -- HELPERS ---------------------------------------------------------
 
 function dteFromExpiration(iso: string): number {
   const [y, m, d] = iso.split("-").map(Number);

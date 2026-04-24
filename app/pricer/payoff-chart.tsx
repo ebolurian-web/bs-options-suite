@@ -98,8 +98,12 @@ function PayoffSvg({
   const y0 = yMin - padY;
   const y1 = yMax + padY;
 
-  const xScale = (p: number) => padL + ((p - xMin) / (xMax - xMin)) * (W - padL - padR);
-  const yScale = (v: number) => padT + (1 - (v - y0) / (y1 - y0)) * (H - padT - padB);
+  // Quantize coordinates to 2 decimal places so Node and Chromium V8 emit
+  // identical strings (ULP differences in floating-point math would otherwise
+  // cause hydration mismatches on SVG numeric attributes).
+  const q = (n: number) => Math.round(n * 100) / 100;
+  const xScale = (p: number) => q(padL + ((p - xMin) / (xMax - xMin)) * (W - padL - padR));
+  const yScale = (v: number) => q(padT + (1 - (v - y0) / (y1 - y0)) * (H - padT - padB));
 
   const linePath = (ys: number[]) =>
     prices.map((p, i) => `${i === 0 ? "M" : "L"}${xScale(p).toFixed(1)},${yScale(ys[i]).toFixed(1)}`).join(" ");
