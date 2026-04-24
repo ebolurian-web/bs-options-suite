@@ -149,8 +149,14 @@ export function StrategiesView() {
           ),
         );
       }
+      const volForAnnouncement =
+        hist?.realizedVol != null
+          ? (hist.realizedVol * 100).toFixed(1)
+          : c.quote.iv30 != null
+            ? (c.quote.iv30 * 100).toFixed(1)
+            : volPct.toFixed(1);
       setAnnouncement(
-        `Loaded ${c.ticker} at $${c.quote.price.toFixed(2)}. Expiry options updated.`,
+        `${c.ticker} loaded. Spot $${c.quote.price.toFixed(2)}, volatility ${volForAnnouncement}%, rate ${rPct.toFixed(2)}%.`,
       );
     } catch (err) {
       if (ctrl.signal.aborted) return;
@@ -242,7 +248,7 @@ export function StrategiesView() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Underlying + assumptions */}
+      {/* Underlying — ticker search + live read-only badges */}
       <section
         aria-labelledby="h-underlying"
         className="rounded-md border p-4"
@@ -253,7 +259,7 @@ export function StrategiesView() {
           className="mb-3 text-xs font-semibold uppercase tracking-[0.1em]"
           style={{ color: "var(--color-fg-muted)" }}
         >
-          Underlying &amp; assumptions
+          Underlying
         </h2>
         <div className="flex flex-wrap items-end gap-4">
           <form
@@ -261,7 +267,7 @@ export function StrategiesView() {
               e.preventDefault();
               loadTicker();
             }}
-            className="flex flex-1 min-w-[220px] items-end gap-2"
+            className="flex flex-1 min-w-[240px] items-end gap-2"
           >
             <div className="flex-1">
               <label
@@ -269,7 +275,7 @@ export function StrategiesView() {
                 className="block text-[0.65rem] font-semibold uppercase tracking-[0.1em]"
                 style={{ color: "var(--color-fg-muted)" }}
               >
-                Ticker (optional)
+                Ticker
               </label>
               <input
                 id="strat-ticker"
@@ -297,46 +303,14 @@ export function StrategiesView() {
               {busy ? "Loading…" : "Load"}
             </button>
           </form>
-          <div className="w-[150px]">
-            <ParamInput
-              id="strat-spot"
-              label="Spot"
-              unit="$"
-              value={spot}
-              onChange={setSpot}
-              min={0.01}
-              max={10000}
-              step={0.01}
-              hideSlider
-            />
-          </div>
-          <div className="w-[150px]">
-            <ParamInput
-              id="strat-vol"
-              label="Volatility σ"
-              unit="%"
-              value={volPct}
-              onChange={setVolPct}
-              min={0.5}
-              max={300}
-              step={0.5}
-              hideSlider
-              helpText="Used for probability-of-profit and net Greeks."
-            />
-          </div>
-          <div className="w-[150px]">
-            <ParamInput
-              id="strat-r"
-              label="Risk-Free r"
-              unit="%"
-              value={rPct}
-              onChange={setRPct}
-              min={0}
-              max={20}
-              step={0.05}
-              hideSlider
-            />
-          </div>
+
+          {/* Read-only live badges */}
+          <dl className="flex flex-wrap gap-3 text-sm">
+            <AssumptionBadge id="badge-spot" label="Spot" value={`$${spot.toFixed(2)}`} />
+            <AssumptionBadge id="badge-vol" label="Volatility σ" value={`${volPct.toFixed(1)}%`} />
+            <AssumptionBadge id="badge-r" label="Risk-Free r" value={`${rPct.toFixed(2)}%`} />
+          </dl>
+
           {chain && (
             <button
               type="button"
@@ -363,6 +337,11 @@ export function StrategiesView() {
             {error}
           </p>
         )}
+        <p className="mt-2 text-[0.72rem]" style={{ color: "var(--color-fg-subtle)" }}>
+          Spot, volatility, and rate are seeded from live market data. Expand{" "}
+          <strong style={{ color: "var(--color-fg-muted)" }}>Manual overrides</strong> at the bottom
+          to run scenario analysis.
+        </p>
       </section>
 
       {/* Presets */}
@@ -556,6 +535,90 @@ export function StrategiesView() {
           />
         </>
       )}
+
+      {/* Manual overrides — for scenario analysis after a ticker is loaded */}
+      <details
+        className="rounded-md border"
+        style={{ background: "var(--color-surface-1)", borderColor: "var(--color-border)" }}
+      >
+        <summary
+          className="cursor-pointer px-4 py-3 text-xs font-semibold uppercase tracking-[0.1em]"
+          style={{ color: "var(--color-fg-muted)" }}
+        >
+          Manual overrides — Spot / σ / Risk-Free rate
+        </summary>
+        <div
+          className="grid gap-4 border-t p-4 md:grid-cols-3"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          <ParamInput
+            id="override-spot"
+            label="Override spot price"
+            unit="$"
+            value={spot}
+            onChange={setSpot}
+            min={0.01}
+            max={10000}
+            step={0.01}
+          />
+          <ParamInput
+            id="override-vol"
+            label="Override volatility σ"
+            unit="%"
+            value={volPct}
+            onChange={setVolPct}
+            min={0.5}
+            max={300}
+            step={0.5}
+            helpText="Used for probability-of-profit and net Greeks."
+          />
+          <ParamInput
+            id="override-r"
+            label="Override risk-free rate"
+            unit="%"
+            value={rPct}
+            onChange={setRPct}
+            min={0}
+            max={20}
+            step={0.05}
+          />
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function AssumptionBadge({
+  id,
+  label,
+  value,
+}: {
+  id: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      className="rounded border px-3 py-1.5"
+      style={{
+        background: "var(--color-surface-2)",
+        borderColor: "var(--color-border)",
+      }}
+    >
+      <dt
+        className="text-[0.62rem] font-semibold uppercase tracking-[0.1em]"
+        style={{ color: "var(--color-fg-muted)" }}
+      >
+        {label}
+      </dt>
+      <dd
+        id={id}
+        aria-live="polite"
+        className="font-mono text-sm font-semibold tabular-nums"
+        style={{ color: "var(--color-fg-default)" }}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

@@ -13,11 +13,37 @@ export type CombinedPayoffChartProps = {
 export function CombinedPayoffChart({ legs, spot }: CombinedPayoffChartProps) {
   const data = useMemo(() => {
     if (!legs.length) return null;
+
+    // Tighten the x-range to the zone that actually matters: strikes, spot,
+    // and (after a cheap first pass) the break-even prices. Avoids the
+    // "flat line with a tiny peak off to the side" problem when strikes
+    // span a wide range (iron condors, butterflies, etc.).
     const strikes = legs.filter((l) => l.type !== "stock").map((l) => l.strike);
-    const minK = strikes.length ? Math.min(...strikes, spot) : spot;
-    const maxK = strikes.length ? Math.max(...strikes, spot) : spot;
-    const lo = Math.max(0.01, minK * 0.6);
-    const hi = maxK * 1.6;
+    const anchors = strikes.length ? [spot, ...strikes] : [spot];
+    const mn0 = Math.min(...anchors);
+    const mx0 = Math.max(...anchors);
+
+    // First pass: wide scan to find break-evens (±50% around spot covers the
+    // vast majority of real-world break-evens).
+    const scanLo = Math.max(0.01, Math.min(mn0, spot * 0.5));
+    const scanHi = Math.max(mx0, spot * 1.5);
+    const scanN = 200;
+    const scanStep = (scanHi - scanLo) / scanN;
+    const scanPrices: number[] = [];
+    for (let i = 0; i <= scanN; i++) scanPrices.push(scanLo + i * scanStep);
+    const scanPnls = combinedPnl(legs, scanPrices);
+    const scanBEs = findBreakEvens(scanPrices, scanPnls);
+
+    // Final range: anchors + break-evens, padded by 20% of the total span
+    // (with a minimum span of 30% of spot so single-leg strategies still
+    // show enough dynamic range).
+    const rangePoints = [...anchors, ...scanBEs];
+    const mn = Math.min(...rangePoints);
+    const mx = Math.max(...rangePoints);
+    const span = Math.max(mx - mn, spot * 0.3);
+    const lo = Math.max(0.01, mn - span * 0.2);
+    const hi = mx + span * 0.2;
+
     const N = 120;
     const step = (hi - lo) / N;
     const prices: number[] = [];
