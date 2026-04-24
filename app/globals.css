@@ -19,27 +19,27 @@
   --color-fg-muted: #a1a1a1;     /* 7.0:1 on base — AA */
   --color-fg-subtle: #737373;    /* 3.9:1 — large text / UI only */
 
-  /* Accents */
-  --color-accent: #7aa2ff;       /* 8.4:1 — cool blue primary */
-  --color-accent-hover: #9bbcff;
+  /* Accents — green primary identity */
+  --color-accent: #00d084;       /* 10.8:1 on base — brand green */
+  --color-accent-hover: #22e89b;
 
   /* State */
   --color-success: #4ade80;      /* 9.1:1 */
   --color-warn: #fbbf24;         /* 10.4:1 */
-  --color-error: #f87171;        /* 6.5:1 */
+  --color-error: #f87171;        /* 6.5:1 — "put" color */
 
   /* Interaction */
-  --color-focus-ring: #60a5fa;   /* 7.0:1 on base */
+  --color-focus-ring: #34d399;   /* 11.6:1 on base, 7.9:1 on surface-3 */
   --color-border: #2e2e2e;       /* 3.0:1 — UI component min */
   --color-border-strong: #3f3f3f;
 
   /* Chart palette — pair with line-style/marker shape, never hue-only */
-  --chart-1: #7aa2ff;
-  --chart-2: #4ade80;
+  --chart-1: #00d084;
+  --chart-2: #f87171;
   --chart-3: #fbbf24;
-  --chart-4: #f472b6;
-  --chart-5: #22d3ee;
-  --chart-6: #c4b5fd;
+  --chart-4: #60a5fa;
+  --chart-5: #c4b5fd;
+  --chart-6: #22d3ee;
 
   /* Typography */
   --font-display: "Libre Baskerville", ui-serif, Georgia, serif;
@@ -69,14 +69,14 @@
   --color-fg-muted: #4b5563;     /* 8.6:1 */
   --color-fg-subtle: #6b7280;    /* 5.7:1 */
 
-  --color-accent: #2563eb;       /* 7.3:1 */
-  --color-accent-hover: #1d4ed8;
+  --color-accent: #047857;       /* 5.9:1 on bg-base — darker green for light mode */
+  --color-accent-hover: #065f46;
 
   --color-success: #059669;      /* 4.7:1 */
   --color-warn: #b45309;         /* 6.1:1 */
   --color-error: #dc2626;        /* 5.9:1 */
 
-  --color-focus-ring: #2563eb;
+  --color-focus-ring: #059669;   /* 4.5:1 on bg-base */
   --color-border: #d4d4d8;       /* 3.0:1 on bg-base */
   --color-border-strong: #a1a1aa;
 

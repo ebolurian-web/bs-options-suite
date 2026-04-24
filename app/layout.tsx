@@ -41,7 +41,7 @@ export default function RootLayout({
       <head>
         <ThemeInitScript />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>

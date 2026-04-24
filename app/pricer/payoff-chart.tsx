@@ -178,12 +178,13 @@ function PayoffSvg({
         stroke="var(--color-success)"
         strokeWidth={2}
       />
-      {/* put curve */}
+      {/* put curve — dashed to differentiate from the call line for non-color-based perception */}
       <path
         d={linePath(putPnl)}
         fill="none"
         stroke="var(--color-error)"
         strokeWidth={2}
+        strokeDasharray="6 4"
       />
       {/* axes labels */}
       <g fontSize={10} fill="var(--color-fg-muted)">
@@ -203,7 +204,7 @@ function PayoffSvg({
         <rect x={W - padR - 110} y={padT - 2} width={110} height={32} fill="var(--color-surface-2)" opacity={0.85} rx={4} />
         <line x1={W - padR - 104} x2={W - padR - 88} y1={padT + 8} y2={padT + 8} stroke="var(--color-success)" strokeWidth={2} />
         <text x={W - padR - 84} y={padT + 11}>Call P&L</text>
-        <line x1={W - padR - 104} x2={W - padR - 88} y1={padT + 22} y2={padT + 22} stroke="var(--color-error)" strokeWidth={2} />
+        <line x1={W - padR - 104} x2={W - padR - 88} y1={padT + 22} y2={padT + 22} stroke="var(--color-error)" strokeWidth={2} strokeDasharray="4 3" />
         <text x={W - padR - 84} y={padT + 25}>Put P&L</text>
       </g>
     </svg>
