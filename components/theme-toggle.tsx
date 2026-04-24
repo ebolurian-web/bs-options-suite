@@ -1,40 +1,70 @@
 "use client";
 
-import { useTheme, type Theme } from "@/lib/hooks";
+import { useTheme } from "@/lib/hooks";
 
-const options: Theme[] = ["system", "light", "dark"];
-
+/**
+ * Icon-only binary theme toggle.
+ * - Native <button type="button"> with aria-pressed (pressed = dark active).
+ * - Static aria-label ("Toggle dark mode") — stable name avoids the
+ *   announcement race that dynamic labels cause on toggle interactions.
+ * - Min 44x44 hit target for WCAG SC 2.5.8.
+ */
 export function ThemeToggle() {
   const [theme, setTheme] = useTheme();
+  const isDark = theme === "dark";
   return (
-    <fieldset
-      className="flex items-center gap-0 rounded-md border p-0.5 text-xs"
-      style={{ borderColor: "var(--color-border)", background: "var(--color-surface-1)" }}
+    <button
+      type="button"
+      aria-pressed={isDark}
+      aria-label="Toggle dark mode"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors"
+      style={{
+        background: "var(--color-surface-1)",
+        borderColor: "var(--color-border)",
+        color: "var(--color-fg-default)",
+      }}
     >
-      <legend className="sr-only">Color theme</legend>
-      {options.map((v) => {
-        const selected = theme === v;
-        return (
-          <label
-            key={v}
-            className="cursor-pointer rounded px-2 py-1 capitalize transition-colors"
-            style={{
-              color: selected ? "var(--color-fg-default)" : "var(--color-fg-muted)",
-              background: selected ? "var(--color-surface-3)" : "transparent",
-            }}
-          >
-            <input
-              type="radio"
-              name="theme"
-              value={v}
-              checked={selected}
-              onChange={() => setTheme(v)}
-              className="sr-only"
-            />
-            <span>{v}</span>
-          </label>
-        );
-      })}
-    </fieldset>
+      {isDark ? <MoonIcon /> : <SunIcon />}
+    </button>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
   );
 }

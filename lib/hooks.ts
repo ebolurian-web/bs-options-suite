@@ -19,32 +19,22 @@ export function useReducedMotion(): boolean {
   return reduced;
 }
 
-export type Theme = "system" | "light" | "dark";
+export type Theme = "light" | "dark";
 
-/** Read/write theme with localStorage + system listener. */
+/** Read/write theme with localStorage. Default dark. No system mode. */
 export function useTheme(): [Theme, (t: Theme) => void] {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    const stored = (localStorage.getItem("theme") as Theme | null) ?? "system";
-    setThemeState(stored);
+    const stored = localStorage.getItem("theme");
+    const resolved: Theme = stored === "light" ? "light" : "dark";
+    setThemeState(resolved);
+    document.documentElement.dataset.theme = resolved;
   }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyResolved = () => {
-      const resolved = theme === "system" ? (mq.matches ? "dark" : "light") : theme;
-      document.documentElement.dataset.theme = resolved;
-    };
-    applyResolved();
-    if (theme === "system") {
-      mq.addEventListener("change", applyResolved);
-      return () => mq.removeEventListener("change", applyResolved);
-    }
-  }, [theme]);
 
   const setTheme = (t: Theme) => {
     localStorage.setItem("theme", t);
+    document.documentElement.dataset.theme = t;
     setThemeState(t);
   };
 

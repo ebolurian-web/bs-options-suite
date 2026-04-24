@@ -7,7 +7,9 @@ import { TickerSearch } from "@/components/ticker-search";
 import { moneynessCall, parityResidual, priceBS } from "@/lib/bs";
 import { ApiClientError, fetchChain, fetchHistory } from "@/lib/client";
 import type { HistoricalSeries, OptionChain, OptionContract } from "@/lib/types";
+import { buildVolSurface, type VolSurface } from "@/lib/vol-surface";
 import { PayoffChart } from "./payoff-chart";
+import { VolSurfaceSection } from "./vol-surface-section";
 
 const fmt = (n: number | null | undefined, d = 2) =>
   n == null || !Number.isFinite(n) ? "—" : n.toFixed(d);
@@ -19,6 +21,7 @@ export function PricerView() {
   // Market data state
   const [chain, setChain] = useState<OptionChain | null>(null);
   const [history, setHistory] = useState<HistoricalSeries | null>(null);
+  const [volSurface, setVolSurface] = useState<VolSurface | null>(null);
   const [selectedExpiration, setSelectedExpiration] = useState<string | null>(null);
   const [selectedStrike, setSelectedStrike] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -110,6 +113,24 @@ export function PricerView() {
       if (!ctrl.signal.aborted) setBusy(false);
     }
   }, [sigmaPct]);
+
+  // Rebuild vol surface when chain, rate, or dividend yield changes
+  useEffect(() => {
+    if (!chain) {
+      setVolSurface(null);
+      return;
+    }
+    try {
+      const surface = buildVolSurface({
+        chain,
+        riskFreeRate: rPct / 100,
+        dividendYield: qPct / 100,
+      });
+      setVolSurface(surface);
+    } catch {
+      setVolSurface(null);
+    }
+  }, [chain, rPct, qPct]);
 
   // Re-seed inputs when user changes expiration or strike from dropdowns
   useEffect(() => {
@@ -297,7 +318,7 @@ export function PricerView() {
         </section>
 
         {/* Payoff */}
-        <section aria-labelledby="h-payoff">
+        <section aria-labelledby="h-payoff" className="mb-6">
           <h3
             id="h-payoff"
             className="mb-2 text-sm font-semibold uppercase tracking-wide"
@@ -307,6 +328,11 @@ export function PricerView() {
           </h3>
           <PayoffChart S={S} K={K} callPremium={result?.call ?? 0} putPremium={result?.put ?? 0} />
         </section>
+
+        {/* Volatility surface — only when a chain is loaded */}
+        {volSurface && volSurface.expirations.length > 0 && (
+          <VolSurfaceSection surface={volSurface} />
+        )}
       </section>
     </div>
   );

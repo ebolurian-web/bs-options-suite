@@ -26,8 +26,10 @@ export function StatsGrid({
 }
 
 export type StatTileProps = {
-  /** Short label (e.g., "DELTA"). Styled small-caps — not a heading. */
-  term: string;
+  /** Short label (e.g., "DELTA"). Styled small-caps — not a heading.
+   *  Accepts ReactNode so callers can attach a visually-hidden accessible
+   *  expansion (e.g., "25Δ RR" with sr-only "25 delta risk reversal"). */
+  term: React.ReactNode;
   /** Primary value (e.g., "0.6368"). */
   value: React.ReactNode;
   /** Optional hint shown beneath the value. */
