@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Data, Layout } from "plotly.js-dist-min";
 import { ChartFigure } from "@/components/chart-figure";
 import { PlotlyChart } from "@/components/plotly-chart";
+import { mergeLayout } from "@/lib/plotly-theme";
 import type { StrategyLeg } from "@/lib/strategy";
 import { combinedPnl, nearestTYears } from "@/lib/strategy";
 
@@ -125,35 +126,21 @@ export function DistributionChart({ legs, spot, volatility, popPercent, breakEve
     ),
   ];
 
-  const layout: Partial<Layout> = {
-    paper_bgcolor: "#111111",
-    plot_bgcolor: "#0a0a0a",
-    font: { color: "#a1a1a1", family: "Inter, system-ui, sans-serif", size: 11 },
-    xaxis: {
-      gridcolor: "#1a1a1a",
-      zerolinecolor: "#2e2e2e",
-      color: "#a1a1a1",
-      title: { text: "Stock Price at Expiry ($)" },
-      range: [prices[0], prices[prices.length - 1]],
-    },
-    yaxis: {
-      gridcolor: "#1a1a1a",
-      zerolinecolor: "#2e2e2e",
-      color: "#a1a1a1",
-      title: { text: "Probability Density" },
-      range: [0, maxPdf * 1.25],
-    },
-    margin: { l: 64, r: 20, t: 14, b: 56 },
-    legend: {
-      bgcolor: "rgba(17,17,17,0.85)",
-      bordercolor: "#2e2e2e",
-      borderwidth: 1,
-      orientation: "h",
-      x: 0,
-      y: -0.22,
-    },
-    hovermode: "x unified",
-  };
+  const makeLayout = (): Partial<Layout> =>
+    mergeLayout({
+      xaxis: {
+        title: { text: "Stock Price at Expiry ($)" },
+        range: [prices[0], prices[prices.length - 1]],
+      },
+      yaxis: {
+        title: { text: "Probability Density" },
+        range: [0, maxPdf * 1.25],
+      },
+      margin: { l: 64, r: 20, t: 14, b: 56 },
+      legend: { orientation: "h", x: 0, y: -0.22 },
+      hovermode: "x unified",
+    });
+  const layout = makeLayout();
 
   const days = Math.round(T * 365);
   const description =
@@ -163,7 +150,7 @@ export function DistributionChart({ legs, spot, volatility, popPercent, breakEve
 
   return (
     <ChartFigure id="dist" title="Probability Distribution at Expiry" description={description}>
-      <PlotlyChart data={traces} layout={layout} style={{ height: 340 }} />
+      <PlotlyChart data={traces} layout={layout} relayoutForTheme={makeLayout} style={{ height: 340 }} />
     </ChartFigure>
   );
 }

@@ -5,6 +5,7 @@ import type { Data, Layout } from "plotly.js-dist-min";
 import { ChartFigure } from "@/components/chart-figure";
 import { PlotlyChart } from "@/components/plotly-chart";
 import { StatsGrid, StatTile } from "@/components/stats-grid";
+import { mergeLayout, plotly3DScene } from "@/lib/plotly-theme";
 import {
   buildSurfaceGrid,
   classifyTermStructure,
@@ -15,15 +16,6 @@ import {
 } from "@/lib/vol-surface";
 
 type Tab = "surface" | "smile" | "skew";
-
-const DARK_PLOTLY = {
-  paper_bgcolor: "#111111",
-  plot_bgcolor: "#0a0a0a",
-  font: { color: "#a1a1a1", family: "Inter, system-ui, sans-serif", size: 11 },
-  xaxis: { gridcolor: "#1a1a1a", zerolinecolor: "#2e2e2e", color: "#a1a1a1" },
-  yaxis: { gridcolor: "#1a1a1a", zerolinecolor: "#2e2e2e", color: "#a1a1a1" },
-  margin: { l: 60, r: 20, t: 20, b: 50 },
-} as const satisfies Partial<Layout>;
 
 export function VolSurfaceSection({ surface }: { surface: VolSurface }) {
   const [tab, setTab] = useState<Tab>("surface");
@@ -119,35 +111,14 @@ function SurfacePanel({ surface }: { surface: VolSurface }) {
     } as Partial<Data>,
   ];
 
-  const layout: Partial<Layout> = {
-    ...DARK_PLOTLY,
-    margin: { l: 0, r: 0, t: 10, b: 0 },
-    scene: {
-      bgcolor: "#0a0a0a",
-      xaxis: {
-        title: { text: "Moneyness (K/S)" },
-        color: "#ededed",
-        gridcolor: "#242424",
-        backgroundcolor: "#0a0a0a",
-        showbackground: true,
-      },
-      yaxis: {
-        title: { text: "Days to Expiry" },
-        color: "#ededed",
-        gridcolor: "#242424",
-        backgroundcolor: "#0a0a0a",
-        showbackground: true,
-      },
-      zaxis: {
-        title: { text: "IV (%)" },
-        color: "#ededed",
-        gridcolor: "#242424",
-        backgroundcolor: "#0a0a0a",
-        showbackground: true,
-      },
-      camera: { eye: { x: 1.45, y: -1.45, z: 0.85 } },
-    } as Layout["scene"],
+  const makeLayout = (): Partial<Layout> => {
+    const scene = plotly3DScene();
+    scene.xaxis = { ...scene.xaxis, title: { text: "Moneyness (K/S)" } };
+    scene.yaxis = { ...scene.yaxis, title: { text: "Days to Expiry" } };
+    scene.zaxis = { ...scene.zaxis, title: { text: "IV (%)" } };
+    return mergeLayout({ margin: { l: 0, r: 0, t: 10, b: 0 }, scene });
   };
+  const layout = makeLayout();
 
   const tableRows = surface.expirations.map((e) => {
     const atm = e.atmIV != null ? (e.atmIV * 100).toFixed(1) + "%" : "—";
@@ -172,7 +143,7 @@ function SurfacePanel({ surface }: { surface: VolSurface }) {
         rows: tableRows,
       }}
     >
-      <PlotlyChart data={data} layout={layout} style={{ height: 480 }} />
+      <PlotlyChart data={data} layout={layout} relayoutForTheme={makeLayout} style={{ height: 480 }} />
     </ChartFigure>
   );
 }
@@ -245,30 +216,24 @@ function SmilePanel({ surface }: { surface: VolSurface }) {
 
   if (!slice) return null;
 
-  const layout: Partial<Layout> = {
-    ...DARK_PLOTLY,
-    xaxis: { ...DARK_PLOTLY.xaxis, title: { text: "Moneyness (K/S)" } },
-    yaxis: { ...DARK_PLOTLY.yaxis, title: { text: "Implied Volatility (%)" } },
-    legend: {
-      bgcolor: "rgba(17,17,17,0.8)",
-      bordercolor: "#2e2e2e",
-      borderwidth: 1,
-      orientation: "h",
-      x: 0,
-      y: -0.2,
-    },
-    shapes: [
-      {
-        type: "line",
-        x0: 1,
-        x1: 1,
-        y0: 0,
-        y1: 1,
-        yref: "paper",
-        line: { color: "#a1a1a1", width: 1, dash: "dash" },
-      },
-    ],
-  };
+  const makeSmileLayout = (): Partial<Layout> =>
+    mergeLayout({
+      xaxis: { title: { text: "Moneyness (K/S)" } },
+      yaxis: { title: { text: "Implied Volatility (%)" } },
+      legend: { orientation: "h", x: 0, y: -0.2 },
+      shapes: [
+        {
+          type: "line",
+          x0: 1,
+          x1: 1,
+          y0: 0,
+          y1: 1,
+          yref: "paper",
+          line: { color: "#a1a1a1", width: 1, dash: "dash" },
+        },
+      ],
+    });
+  const layout = makeSmileLayout();
 
   const tableRows = slice.contracts
     .filter((c) => c.callIV != null || c.putIV != null)
@@ -328,7 +293,7 @@ function SmilePanel({ surface }: { surface: VolSurface }) {
           rows: tableRows,
         }}
       >
-        <PlotlyChart data={data} layout={layout} style={{ height: 380 }} />
+        <PlotlyChart data={data} layout={layout} relayoutForTheme={makeSmileLayout} style={{ height: 380 }} />
       </ChartFigure>
     </div>
   );
@@ -386,19 +351,13 @@ function SkewPanel({
     } as Partial<Data>,
   ];
 
-  const layout: Partial<Layout> = {
-    ...DARK_PLOTLY,
-    xaxis: { ...DARK_PLOTLY.xaxis, title: { text: "Days to Expiry" } },
-    yaxis: { ...DARK_PLOTLY.yaxis, title: { text: "Value (%)" } },
-    legend: {
-      bgcolor: "rgba(17,17,17,0.85)",
-      bordercolor: "#2e2e2e",
-      borderwidth: 1,
-      orientation: "h",
-      x: 0,
-      y: -0.22,
-    },
-  };
+  const makeSkewLayout = (): Partial<Layout> =>
+    mergeLayout({
+      xaxis: { title: { text: "Days to Expiry" } },
+      yaxis: { title: { text: "Value (%)" } },
+      legend: { orientation: "h", x: 0, y: -0.22 },
+    });
+  const layout = makeSkewLayout();
 
   const tableRows = skew.map((s, i) => [
     surface.expirations[i].expiration,
@@ -462,7 +421,7 @@ function SkewPanel({
           rows: tableRows,
         }}
       >
-        <PlotlyChart data={data} layout={layout} style={{ height: 360 }} />
+        <PlotlyChart data={data} layout={layout} relayoutForTheme={makeSkewLayout} style={{ height: 360 }} />
       </ChartFigure>
     </div>
   );

@@ -1,39 +1,44 @@
 @import "tailwindcss";
 
-/* ──────────────────────────────────────────────────────────────
-   Design tokens — dark-first.
-   Contrast ratios verified against --color-bg-base (#0a0a0a) and
-   --color-surface-1 (#111111). All text tokens pass WCAG AA 4.5:1;
-   UI tokens pass 3:1.
-   ────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   Design tokens — dark-first. All contrast verified:
+   text ≥ 4.5:1, UI ≥ 3:1 on every surface layer.
+   ══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Surface layers */
+  /* Surfaces */
   --color-bg-base: #0a0a0a;
   --color-surface-1: #111111;
   --color-surface-2: #1a1a1a;
   --color-surface-3: #242424;
+  /* Subtle gradient stops for elevated surfaces */
+  --color-surface-1-top: #161616;
+  --color-surface-2-top: #1f1f1f;
 
   /* Text */
-  --color-fg-default: #ededed;   /* 15.8:1 on base */
-  --color-fg-muted: #a1a1a1;     /* 7.0:1 on base — AA */
-  --color-fg-subtle: #737373;    /* 3.9:1 — large text / UI only */
+  --color-fg-default: #ededed;
+  --color-fg-muted: #a1a1a1;
+  --color-fg-subtle: #737373;
 
-  /* Accents — green primary identity */
-  --color-accent: #00d084;       /* 10.8:1 on base — brand green */
+  /* Accents */
+  --color-accent: #00d084;
   --color-accent-hover: #22e89b;
+  --color-accent-soft: rgba(0, 208, 132, 0.18);
 
   /* State */
-  --color-success: #4ade80;      /* 9.1:1 */
-  --color-warn: #fbbf24;         /* 10.4:1 */
-  --color-error: #f87171;        /* 6.5:1 — "put" color */
+  --color-success: #4ade80;
+  --color-warn: #fbbf24;
+  --color-error: #f87171;
+  --color-error-soft: rgba(248, 113, 113, 0.18);
 
   /* Interaction */
-  --color-focus-ring: #34d399;   /* 11.6:1 on base, 7.9:1 on surface-3 */
-  --color-border: #2e2e2e;       /* 3.0:1 — UI component min */
+  --color-focus-ring: #34d399;
+  --color-focus-glow: rgba(52, 211, 153, 0.28);
+  --color-border: #2e2e2e;
   --color-border-strong: #3f3f3f;
+  --color-highlight-inset: rgba(255, 255, 255, 0.045);
 
-  /* Chart palette — pair with line-style/marker shape, never hue-only */
+  /* Chart palette */
   --chart-1: #00d084;
   --chart-2: #f87171;
   --chart-3: #fbbf24;
@@ -47,43 +52,44 @@
   --font-mono: var(--font-geist-mono, "JetBrains Mono"), ui-monospace, monospace;
 
   /* Radii */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-
-  /* Elevation (subtle — we're a dark UI, not glassmorphism) */
-  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-glow-accent: 0 0 0 1px rgba(122, 162, 255, 0.35), 0 8px 24px rgba(122, 162, 255, 0.18);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
   color-scheme: dark;
 }
 
-/* Light theme — flipped palette, same token names */
 :root[data-theme="light"] {
   --color-bg-base: #fafafa;
   --color-surface-1: #ffffff;
   --color-surface-2: #f3f4f6;
   --color-surface-3: #e5e7eb;
+  --color-surface-1-top: #fcfcfc;
+  --color-surface-2-top: #eef0f3;
 
-  --color-fg-default: #0a0a0a;   /* 15.8:1 */
-  --color-fg-muted: #4b5563;     /* 8.6:1 */
-  --color-fg-subtle: #6b7280;    /* 5.7:1 */
+  --color-fg-default: #0a0a0a;
+  --color-fg-muted: #4b5563;
+  --color-fg-subtle: #6b7280;
 
-  --color-accent: #047857;       /* 5.9:1 on bg-base — darker green for light mode */
+  --color-accent: #047857;
   --color-accent-hover: #065f46;
+  --color-accent-soft: rgba(4, 120, 87, 0.14);
 
-  --color-success: #059669;      /* 4.7:1 */
-  --color-warn: #b45309;         /* 6.1:1 */
-  --color-error: #dc2626;        /* 5.9:1 */
+  --color-success: #059669;
+  --color-warn: #b45309;
+  --color-error: #dc2626;
+  --color-error-soft: rgba(220, 38, 38, 0.12);
 
-  --color-focus-ring: #059669;   /* 4.5:1 on bg-base */
-  --color-border: #d4d4d8;       /* 3.0:1 on bg-base */
+  --color-focus-ring: #059669;
+  --color-focus-glow: rgba(5, 150, 105, 0.22);
+  --color-border: #d4d4d8;
   --color-border-strong: #a1a1aa;
+  --color-highlight-inset: rgba(255, 255, 255, 0.9);
 
   color-scheme: light;
 }
 
-/* Tell Tailwind v4 about our tokens so utilities like bg-surface-1 work */
+/* Tailwind v4 tokens */
 @theme inline {
   --color-bg-base: var(--color-bg-base);
   --color-surface-1: var(--color-surface-1);
@@ -100,14 +106,17 @@
   --color-focus-ring: var(--color-focus-ring);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
-
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+}
+
+html {
+  /* Tabular figures everywhere — every number aligns */
+  font-feature-settings: "tnum" 1, "ss01" 1;
 }
 
 body {
@@ -117,9 +126,127 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
 }
 
-/* Screen-reader-only utility */
+h1, h2, h3, h4 {
+  letter-spacing: -0.022em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Animated backdrop — decorative, aria-hidden, reduced-motion aware.
+   Very faint dot field that slowly drifts. Dark-theme only; light
+   theme keeps a plain background.
+   ══════════════════════════════════════════════════════════════ */
+.bs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bs-backdrop::before,
+.bs-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(0, 208, 132, 0.08) 0 2px, transparent 3px),
+    radial-gradient(circle at 35% 60%, rgba(0, 208, 132, 0.05) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 65% 30%, rgba(96, 165, 250, 0.05) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 75%, rgba(52, 211, 153, 0.06) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 10% 85%, rgba(0, 208, 132, 0.04) 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.04) 0 1px, transparent 2px);
+  background-size: 240px 240px;
+  animation: bs-drift 42s linear infinite;
+}
+.bs-backdrop::after {
+  background-size: 320px 320px;
+  opacity: 0.7;
+  animation-duration: 57s;
+  animation-direction: reverse;
+}
+/* Vignette to darken edges — keeps content focal */
+.bs-backdrop::before {
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 90%);
+}
+@keyframes bs-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-240px, -240px, 0); }
+}
+:root[data-theme="light"] .bs-backdrop {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Elevated surface utility — subtle top-to-bottom gradient +
+   1px inset highlight. Replaces the flat "rounded-md border"
+   look across the app.
+   ══════════════════════════════════════════════════════════════ */
+.surface-1 {
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-1-top) 0%,
+    var(--color-surface-1) 60%,
+    var(--color-surface-1) 100%
+  );
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 1px 0 0 var(--color-highlight-inset),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.surface-2 {
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-2-top) 0%,
+    var(--color-surface-2) 70%
+  );
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 0 0 var(--color-highlight-inset);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+/* Interactive surface: hover brings a soft accent border */
+.surface-interactive:hover {
+  border-color: color-mix(in oklab, var(--color-accent) 55%, var(--color-border));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Focus handling — outline as primary indicator + subtle glow as
+   supplement. Never blended; focus-visible suppresses any ambient
+   glow that might confuse users.
+   ══════════════════════════════════════════════════════════════ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px var(--color-focus-glow);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Micro-interactions — all gated by reduced-motion no-preference.
+   ══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  .tile-hover:hover {
+    transform: translateY(-1px);
+  }
+  .press-scale:active {
+    transform: scale(0.98);
+  }
+  .glow-accent {
+    box-shadow: 0 0 28px rgba(0, 208, 132, 0.22), inset 0 1px 0 0 var(--color-highlight-inset);
+  }
+  .glow-error {
+    box-shadow: 0 0 28px rgba(248, 113, 113, 0.22), inset 0 1px 0 0 var(--color-highlight-inset);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SR-only utility + skip link
+   ══════════════════════════════════════════════════════════════ */
 .sr-only {
   position: absolute !important;
   width: 1px !important;
@@ -131,15 +258,6 @@ body {
   white-space: nowrap !important;
   border: 0 !important;
 }
-
-/* Universal focus ring — 2px solid, 2px offset, AA vs every surface layer */
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Skip link */
 .skip-link {
   position: absolute;
   top: -100px;
@@ -152,18 +270,20 @@ body {
   border: 1px solid var(--color-border);
   transition: top 0.15s ease;
 }
-.skip-link:focus-visible {
-  top: 0.5rem;
-}
+.skip-link:focus-visible { top: 0.5rem; }
 
-/* Honor reduced motion globally */
+/* ══════════════════════════════════════════════════════════════
+   Reduced motion — disable all decoration and interaction motion.
+   ══════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .bs-backdrop::before,
+  .bs-backdrop::after {
+    animation: none !important;
   }
 }

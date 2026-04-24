@@ -29,14 +29,7 @@ export function HeroQuote(props: HeroQuoteProps) {
   // Empty state — before a ticker is loaded
   if (!ticker || price == null) {
     return (
-      <section
-        aria-labelledby="h-hero"
-        className="rounded-md border p-5"
-        style={{
-          background: "var(--color-surface-1)",
-          borderColor: "var(--color-border)",
-        }}
-      >
+      <section aria-labelledby="h-hero" className="surface-1 p-5">
         <h2 id="h-hero" className="sr-only">
           Current quote
         </h2>
@@ -72,14 +65,7 @@ export function HeroQuote(props: HeroQuoteProps) {
         : "var(--color-warn)";
 
   return (
-    <section
-      aria-labelledby="h-hero"
-      className="rounded-md border"
-      style={{
-        background: "var(--color-surface-1)",
-        borderColor: "var(--color-border)",
-      }}
-    >
+    <section aria-labelledby="h-hero" className="surface-1">
       <h2 id="h-hero" className="sr-only">
         Current quote
       </h2>
@@ -133,7 +119,7 @@ export function HeroQuote(props: HeroQuoteProps) {
 
         {/* Call */}
         <div
-          className="rounded border-l-[3px] pl-3"
+          className="glow-accent rounded border-l-[3px] pl-3 pr-3 py-1"
           style={{ borderColor: "var(--color-accent)" }}
         >
           <dt
@@ -152,7 +138,7 @@ export function HeroQuote(props: HeroQuoteProps) {
 
         {/* Put */}
         <div
-          className="rounded border-l-[3px] pl-3"
+          className="glow-error rounded border-l-[3px] pl-3 pr-3 py-1"
           style={{ borderColor: "var(--color-error)" }}
         >
           <dt

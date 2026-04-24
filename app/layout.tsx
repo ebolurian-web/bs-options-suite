@@ -48,10 +48,11 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <div className="bs-backdrop" aria-hidden="true" />
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        {children}
+        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );

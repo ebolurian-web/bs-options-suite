@@ -2,23 +2,37 @@
 
 import { useEffect, useRef } from "react";
 import type { Data, Layout, Config } from "plotly.js-dist-min";
+import { observeTheme } from "@/lib/plotly-theme";
 
 /**
  * Thin React wrapper around plotly.js-dist-min.
  *
- * Lazy-loads Plotly on mount (it's a 3.7MB chunk) so the Pricer page itself
- * stays fast — the cost is paid only by users who actually open a chart.
- * Uses Plotly.react for efficient incremental updates.
+ * - Lazy-loads Plotly on mount (~3.7 MB chunk).
+ * - Plotly.react for incremental updates.
+ * - Subscribes to `<html data-theme>` changes and calls Plotly.relayout
+ *   so theme toggles re-skin existing charts instead of leaving them
+ *   stranded in the previous palette.
+ * - scrollZoom disabled to return wheel events to the page.
  */
 export type PlotlyChartProps = {
   data: Partial<Data>[];
   layout?: Partial<Layout>;
+  /** Called on every theme change to produce a fresh layout. If omitted,
+   *  the existing layout is reused (theme tokens won't update). */
+  relayoutForTheme?: () => Partial<Layout>;
   config?: Partial<Config>;
   className?: string;
   style?: React.CSSProperties;
 };
 
-export function PlotlyChart({ data, layout, config, className, style }: PlotlyChartProps) {
+export function PlotlyChart({
+  data,
+  layout,
+  relayoutForTheme,
+  config,
+  className,
+  style,
+}: PlotlyChartProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const plotlyRef = useRef<typeof import("plotly.js-dist-min").default | null>(null);
 
@@ -42,6 +56,18 @@ export function PlotlyChart({ data, layout, config, className, style }: PlotlyCh
       cancelled = true;
     };
   }, [data, layout, config]);
+
+  // Theme change → relayout existing chart
+  useEffect(() => {
+    if (!relayoutForTheme) return;
+    const unsubscribe = observeTheme(() => {
+      const el = ref.current;
+      const Plotly = plotlyRef.current;
+      if (!el || !Plotly) return;
+      Plotly.relayout(el, relayoutForTheme());
+    });
+    return unsubscribe;
+  }, [relayoutForTheme]);
 
   useEffect(() => {
     const el = ref.current;
