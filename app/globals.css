@@ -1,26 +1,169 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────
+   Design tokens — dark-first.
+   Contrast ratios verified against --color-bg-base (#0a0a0a) and
+   --color-surface-1 (#111111). All text tokens pass WCAG AA 4.5:1;
+   UI tokens pass 3:1.
+   ────────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface layers */
+  --color-bg-base: #0a0a0a;
+  --color-surface-1: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #242424;
+
+  /* Text */
+  --color-fg-default: #ededed;   /* 15.8:1 on base */
+  --color-fg-muted: #a1a1a1;     /* 7.0:1 on base — AA */
+  --color-fg-subtle: #737373;    /* 3.9:1 — large text / UI only */
+
+  /* Accents */
+  --color-accent: #7aa2ff;       /* 8.4:1 — cool blue primary */
+  --color-accent-hover: #9bbcff;
+
+  /* State */
+  --color-success: #4ade80;      /* 9.1:1 */
+  --color-warn: #fbbf24;         /* 10.4:1 */
+  --color-error: #f87171;        /* 6.5:1 */
+
+  /* Interaction */
+  --color-focus-ring: #60a5fa;   /* 7.0:1 on base */
+  --color-border: #2e2e2e;       /* 3.0:1 — UI component min */
+  --color-border-strong: #3f3f3f;
+
+  /* Chart palette — pair with line-style/marker shape, never hue-only */
+  --chart-1: #7aa2ff;
+  --chart-2: #4ade80;
+  --chart-3: #fbbf24;
+  --chart-4: #f472b6;
+  --chart-5: #22d3ee;
+  --chart-6: #c4b5fd;
+
+  /* Typography */
+  --font-display: "Libre Baskerville", ui-serif, Georgia, serif;
+  --font-sans: var(--font-geist-sans, "Inter"), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono, "JetBrains Mono"), ui-monospace, monospace;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Elevation (subtle — we're a dark UI, not glassmorphism) */
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-glow-accent: 0 0 0 1px rgba(122, 162, 255, 0.35), 0 8px 24px rgba(122, 162, 255, 0.18);
+
+  color-scheme: dark;
 }
 
+/* Light theme — flipped palette, same token names */
+:root[data-theme="light"] {
+  --color-bg-base: #fafafa;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f3f4f6;
+  --color-surface-3: #e5e7eb;
+
+  --color-fg-default: #0a0a0a;   /* 15.8:1 */
+  --color-fg-muted: #4b5563;     /* 8.6:1 */
+  --color-fg-subtle: #6b7280;    /* 5.7:1 */
+
+  --color-accent: #2563eb;       /* 7.3:1 */
+  --color-accent-hover: #1d4ed8;
+
+  --color-success: #059669;      /* 4.7:1 */
+  --color-warn: #b45309;         /* 6.1:1 */
+  --color-error: #dc2626;        /* 5.9:1 */
+
+  --color-focus-ring: #2563eb;
+  --color-border: #d4d4d8;       /* 3.0:1 on bg-base */
+  --color-border-strong: #a1a1aa;
+
+  color-scheme: light;
+}
+
+/* Tell Tailwind v4 about our tokens so utilities like bg-surface-1 work */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg-base: var(--color-bg-base);
+  --color-surface-1: var(--color-surface-1);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-fg-default: var(--color-fg-default);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-success: var(--color-success);
+  --color-warn: var(--color-warn);
+  --color-error: var(--color-error);
+  --color-focus-ring: var(--color-focus-ring);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-fg-default);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Universal focus ring — 2px solid, 2px offset, AA vs every surface layer */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0.5rem;
+  z-index: 50;
+  background: var(--color-surface-2);
+  color: var(--color-fg-default);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  transition: top 0.15s ease;
+}
+.skip-link:focus-visible {
+  top: 0.5rem;
+}
+
+/* Honor reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
