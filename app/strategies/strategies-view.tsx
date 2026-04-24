@@ -6,6 +6,14 @@ import { StatsGrid, StatTile } from "@/components/stats-grid";
 import { ApiClientError, fetchChain, fetchHistory } from "@/lib/client";
 import { PRESETS, buildPreset, computeNetGreeks, computeStats } from "@/lib/strategy";
 import type { Preset, StrategyLeg } from "@/lib/strategy";
+import {
+  decodeStrategy,
+  encodeStrategy,
+  listSaved,
+  removeSaved,
+  saveStrategy,
+  type SavedStrategy,
+} from "@/lib/strategy-codec";
 import type { OptionChain } from "@/lib/types";
 import { CombinedPayoffChart } from "./combined-payoff-chart";
 import { DistributionChart } from "./distribution-chart";
@@ -34,6 +42,9 @@ function defaultExpiryOptions(): ExpiryOption[] {
 export function StrategiesView() {
   const [legs, setLegs] = useState<StrategyLeg[]>([]);
   const legIdRef = useRef(0);
+  const [saved, setSaved] = useState<SavedStrategy[]>([]);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const shareInputRef = useRef<HTMLInputElement | null>(null);
 
   // Market / assumptions
   const [ticker, setTicker] = useState("");
@@ -227,6 +238,96 @@ export function StrategiesView() {
     return { stats, netGreeks };
   }, [legs, spot, volPct, rPct]);
 
+  // ── Saved strategies + URL sharing ──
+  useEffect(() => {
+    setSaved(listSaved());
+  }, []);
+
+  // URL hydration on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("s");
+    if (!s) return;
+    const decoded = decodeStrategy(s);
+    if (!decoded) {
+      setAnnouncement("Shared strategy link could not be decoded.");
+      return;
+    }
+    setSpot(decoded.spot);
+    setVolPct(decoded.volPct);
+    setRPct(decoded.rPct);
+    setTicker(decoded.ticker ?? "");
+    setLegs(decoded.legs.map((l) => ({ ...l, id: legIdRef.current++ })));
+    setAnnouncement(
+      `Loaded shared strategy — ${decoded.legs.length} leg${decoded.legs.length === 1 ? "" : "s"}${decoded.ticker ? `, ${decoded.ticker}` : ""}.`,
+    );
+    if (decoded.ticker) document.title = `${decoded.ticker} shared strategy — BS Options Suite`;
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    const encoded = encodeStrategy({
+      ticker: ticker || null,
+      spot,
+      volPct,
+      rPct,
+      legs,
+    });
+    const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareUrl(null);
+      setAnnouncement("Share link copied to clipboard.");
+    } catch {
+      setShareUrl(url);
+      setAnnouncement("Clipboard unavailable. Select the URL below to copy manually.");
+      // Auto-select the input on next paint
+      setTimeout(() => {
+        shareInputRef.current?.focus();
+        shareInputRef.current?.select();
+      }, 0);
+    }
+  }, [ticker, spot, volPct, rPct, legs]);
+
+  const handleSave = useCallback(() => {
+    if (!legs.length) return;
+    const name = window.prompt(
+      "Name this strategy:",
+      loadedPresetName
+        ? `${loadedPresetName}${ticker ? " · " + ticker : ""}`
+        : `Strategy · ${legs.length} leg${legs.length === 1 ? "" : "s"}`,
+    );
+    if (!name) return;
+    saveStrategy({
+      name: name.trim().slice(0, 80),
+      ticker: ticker || null,
+      spot,
+      volPct,
+      rPct,
+      legs,
+    });
+    setSaved(listSaved());
+    setAnnouncement(`Saved "${name}".`);
+  }, [legs, ticker, spot, volPct, rPct, loadedPresetName]);
+
+  const handleLoadSaved = useCallback((entry: SavedStrategy) => {
+    setTicker(entry.ticker ?? "");
+    setSpot(entry.spot);
+    setVolPct(entry.volPct);
+    setRPct(entry.rPct);
+    setLegs(entry.legs.map((l) => ({ ...l, id: legIdRef.current++ })));
+    setLoadedPresetName(null);
+    setAnnouncement(`Loaded "${entry.name}" — ${entry.legs.length} leg${entry.legs.length === 1 ? "" : "s"}.`);
+  }, []);
+
+  const handleDeleteSaved = useCallback((entry: SavedStrategy) => {
+    const ok = window.confirm(`Delete "${entry.name}"? This cannot be undone.`);
+    if (!ok) return;
+    removeSaved(entry.id);
+    setSaved(listSaved());
+    setAnnouncement(`Deleted "${entry.name}".`);
+  }, []);
+
   // Debounced strategy-summary announcement
   const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -379,6 +480,86 @@ export function StrategiesView() {
           })}
         </div>
       </section>
+
+      {/* Share / Save toolbar */}
+      {legs.length > 0 && (
+        <section
+          aria-label="Share and save strategy"
+          className="flex flex-wrap items-center gap-2 text-xs"
+        >
+          <button
+            type="button"
+            onClick={handleShare}
+            className="press-scale rounded border px-3 py-1.5 font-semibold transition-colors"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-fg-default)",
+              background: "var(--color-surface-1)",
+            }}
+          >
+            <span aria-hidden="true">🔗</span> Share link
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="press-scale rounded border px-3 py-1.5 font-semibold transition-colors"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-fg-default)",
+              background: "var(--color-surface-1)",
+            }}
+          >
+            <span aria-hidden="true">★</span> Save strategy
+          </button>
+          <span style={{ color: "var(--color-fg-subtle)" }}>
+            {legs.length} leg{legs.length === 1 ? "" : "s"} loaded
+          </span>
+        </section>
+      )}
+
+      {/* Clipboard fallback — only when navigator.clipboard is unavailable */}
+      {shareUrl && (
+        <div
+          role="group"
+          aria-labelledby="share-fallback-label"
+          className="surface-1 p-3"
+        >
+          <label
+            id="share-fallback-label"
+            htmlFor="share-fallback-input"
+            className="block text-xs font-semibold"
+            style={{ color: "var(--color-fg-muted)" }}
+          >
+            Copy this link manually
+          </label>
+          <input
+            id="share-fallback-input"
+            ref={shareInputRef}
+            type="text"
+            readOnly
+            value={shareUrl}
+            onFocus={(e) => e.currentTarget.select()}
+            className="mt-1 w-full rounded border px-2 py-1.5 font-mono text-xs"
+            style={{
+              background: "var(--color-surface-2)",
+              borderColor: "var(--color-border)",
+              color: "var(--color-fg-default)",
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setShareUrl(null)}
+            className="mt-2 rounded border px-3 py-1 text-xs font-semibold"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-fg-muted)",
+              background: "transparent",
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Legs table */}
       <LegsSection
@@ -534,6 +715,73 @@ export function StrategiesView() {
             breakEvens={stats.breakEvens}
           />
         </>
+      )}
+
+      {/* Saved strategies */}
+      {saved.length > 0 && (
+        <section aria-labelledby="h-saved" className="surface-1 p-4">
+          <h2
+            id="h-saved"
+            className="mb-3 text-xs font-semibold uppercase tracking-[0.1em]"
+            style={{ color: "var(--color-fg-muted)" }}
+          >
+            Saved strategies ({saved.length})
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {saved.map((s) => (
+              <li
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded border px-3 py-2"
+                style={{
+                  background: "var(--color-surface-2)",
+                  borderColor: "var(--color-border)",
+                }}
+              >
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="truncate text-sm font-semibold"
+                    style={{ color: "var(--color-fg-default)" }}
+                  >
+                    {s.name}
+                  </div>
+                  <div className="text-[0.7rem]" style={{ color: "var(--color-fg-subtle)" }}>
+                    {s.legs.length} leg{s.legs.length === 1 ? "" : "s"}
+                    {s.ticker ? ` · ${s.ticker}` : ""}
+                    {" · saved "}
+                    {new Date(s.savedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLoadSaved(s)}
+                    className="rounded border px-2.5 py-1 text-xs font-semibold transition-colors"
+                    style={{
+                      borderColor: "var(--color-accent)",
+                      color: "var(--color-accent)",
+                      background: "transparent",
+                    }}
+                  >
+                    Load
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete saved strategy: ${s.name}`}
+                    onClick={() => handleDeleteSaved(s)}
+                    className="rounded border px-2.5 py-1 text-xs font-semibold transition-colors"
+                    style={{
+                      borderColor: "var(--color-border)",
+                      color: "var(--color-error)",
+                      background: "transparent",
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Manual overrides — for scenario analysis after a ticker is loaded */}

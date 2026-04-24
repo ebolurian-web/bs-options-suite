@@ -21,10 +21,13 @@ export type HeroQuoteProps = {
   strike: number | null;
   dte: number | null;
   moneyness: "ITM" | "ATM" | "OTM" | null;
+  /** Current IV rank (0-100) and percentile (0-100) from historical vol. */
+  hvRank: number | null;
+  hvPercentile: number | null;
 };
 
 export function HeroQuote(props: HeroQuoteProps) {
-  const { ticker, companyName, price, previousClose, callPrice, putPrice, strike, dte, moneyness } = props;
+  const { ticker, companyName, price, previousClose, callPrice, putPrice, strike, dte, moneyness, hvRank, hvPercentile } = props;
 
   // Empty state — before a ticker is loaded
   if (!ticker || price == null) {
@@ -200,6 +203,48 @@ export function HeroQuote(props: HeroQuoteProps) {
                 </span>
                 <span className="font-semibold" style={{ color: moneynessColor }}>
                   {moneyness}
+                </span>
+              </div>
+            )}
+            {hvRank != null && (
+              <div className="flex items-baseline gap-2" title="IV Rank: where current IV sits in the 52-week min-max range of realized vol">
+                <span
+                  className="text-[0.65rem] font-semibold uppercase"
+                  style={{ color: "var(--color-fg-subtle)" }}
+                >
+                  HV Rank
+                </span>
+                <span
+                  className="font-mono font-semibold tabular-nums"
+                  style={{
+                    color:
+                      hvRank > 70
+                        ? "var(--color-error)"
+                        : hvRank < 30
+                          ? "var(--color-accent)"
+                          : "var(--color-warn)",
+                  }}
+                >
+                  {hvRank.toFixed(0)}
+                  <span className="text-[0.7em]" style={{ color: "var(--color-fg-subtle)" }}>
+                    /100
+                  </span>
+                </span>
+              </div>
+            )}
+            {hvPercentile != null && (
+              <div className="flex items-baseline gap-2" title="HV Percentile: % of trading days in the past year with realized vol below today's implied vol">
+                <span
+                  className="text-[0.65rem] font-semibold uppercase"
+                  style={{ color: "var(--color-fg-subtle)" }}
+                >
+                  HV %tile
+                </span>
+                <span
+                  className="font-mono font-semibold tabular-nums"
+                  style={{ color: "var(--color-fg-default)" }}
+                >
+                  {hvPercentile.toFixed(0)}%
                 </span>
               </div>
             )}

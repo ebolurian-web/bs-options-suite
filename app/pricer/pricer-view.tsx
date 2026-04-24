@@ -7,9 +7,11 @@ import { moneynessCall, parityResidual, priceBS } from "@/lib/bs";
 import { ApiClientError, fetchChain, fetchHistory } from "@/lib/client";
 import type { HistoricalSeries, OptionChain, OptionContract } from "@/lib/types";
 import { buildVolSurface, type VolSurface } from "@/lib/vol-surface";
+import { hvPercentile as calcHvPercentile, hvRank as calcHvRank, rollingRealizedVol } from "@/lib/vol-cone";
 import { ContractBar } from "./contract-bar";
 import { HeroQuote } from "./hero-quote";
 import { PayoffChart } from "./payoff-chart";
+import { VolConeChart } from "./vol-cone-chart";
 import { VolSurfaceSection } from "./vol-surface-section";
 
 const fmt = (n: number | null | undefined, d = 2) =>
@@ -151,6 +153,18 @@ export function PricerView() {
     [chain, selectedExpiration],
   );
 
+  // HV rank + percentile using 20-day rolling realized vol on the 1yr series.
+  const { hvRank, hvPercentile } = useMemo(() => {
+    if (!history || !history.bars.length) return { hvRank: null, hvPercentile: null };
+    const values = rollingRealizedVol(history.bars, 20);
+    if (values.length < 20) return { hvRank: null, hvPercentile: null };
+    const currentIv = sigmaPct / 100;
+    return {
+      hvRank: calcHvRank(values, currentIv),
+      hvPercentile: calcHvPercentile(values, currentIv),
+    };
+  }, [history, sigmaPct]);
+
   const contractLoaded = chain != null;
   const callBE = result ? K + result.call : null;
   const putBE = result ? K - result.put : null;
@@ -168,6 +182,8 @@ export function PricerView() {
         strike={contractLoaded ? K : null}
         dte={contractLoaded ? T * 365.25 : null}
         moneyness={contractLoaded ? moneyness : null}
+        hvRank={hvRank}
+        hvPercentile={hvPercentile}
       />
 
       {/* CONTRACT BAR ------------------------------------------------- */}
@@ -304,6 +320,11 @@ export function PricerView() {
 
       {/* VOL SURFACE -------------------------------------------------- */}
       {volSurface && volSurface.expirations.length > 0 && <VolSurfaceSection surface={volSurface} />}
+
+      {/* HV CONE ------------------------------------------------------ */}
+      {history && history.bars.length > 130 && (
+        <VolConeChart history={history} currentIV={sigmaPct / 100} />
+      )}
 
       {/* REALIZED VOL CONTEXT ----------------------------------------- */}
       {history?.realizedVol != null && (
