@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Libre_Baskerville } from "next/font/google";
 import "./globals.css";
-import { ThemeInitScript } from "@/components/theme-init-script";
+
+// Inlined here rather than wrapped in a component because React 19 / Next 16
+// doesn't execute <script> children inside components on the client.
+const THEME_INIT_SCRIPT = `(function(){try{
+  var s = localStorage.getItem('theme');
+  document.documentElement.dataset.theme = s === 'light' ? 'light' : 'dark';
+}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +45,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <ThemeInitScript />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <a href="#main-content" className="skip-link">
