@@ -11,6 +11,15 @@ Black-Scholes options pricing suite with live market data, a 3-D volatility surf
 
 ## Features
 
+### Trade Ideas (`/trade`)
+- Start from a view — **up, down, flat, or a big move** — plus a target price, a date, and an optional max loss
+- Ranked candidate trades (spreads, single options, condors, butterflies, straddles) built from the strikes actually listed for that expiry
+- Every leg priced at the live bid/ask mid with **its own implied volatility** (skew-aware), with market vs. flat-σ Black-Scholes shown side by side
+- Exact max loss, max gain, and break-evens; probability of profit from the risk-neutral log-normal
+- One P&L chart: payoff at expiry plus a mark-to-model curve at any date, driven by **price / date / IV sliders**
+- "Is it cheap?" verdict comparing ATM IV to 20-day realized vol and its 1-year rank
+- Greeks in plain dollars ("SPY +$1 → +$26"), shareable URLs, and one-click hand-off to the Strategy Builder
+
 ### Pricer (`/pricer`)
 - Black-Scholes pricing with Merton dividend extension, full Greeks (Δ Γ Θ ν)
 - Live options chains via CBOE public delayed quotes (no auth, single-call full chain)

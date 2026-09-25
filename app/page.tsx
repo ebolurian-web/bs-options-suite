@@ -40,19 +40,26 @@ export default function LandingPage() {
               className="mt-6 max-w-xl text-base leading-relaxed"
               style={{ color: "var(--color-fg-muted)" }}
             >
-              Live market data, a 3-D volatility surface, full Greeks, and multi-leg strategy
-              construction. Server-rendered, typed end-to-end, built for the browser.
+              Tell it where you think a stock is headed. It finds option trades that fit, priced at
+              live market quotes, and shows what you can make, what you can lose, and your odds.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/pricer"
+                href="/trade"
                 className="press-scale rounded-md px-5 py-2.5 text-sm font-semibold glow-accent transition-all"
                 style={{
                   background: "var(--color-accent)",
                   color: "#0a0a0a",
                 }}
               >
-                Open Pricer →
+                Find a trade →
+              </Link>
+              <Link
+                href="/pricer"
+                className="press-scale surface-1 tile-hover rounded-md px-5 py-2.5 text-sm font-semibold transition-colors"
+                style={{ color: "var(--color-fg-default)" }}
+              >
+                Pricer
               </Link>
               <Link
                 href="/strategies"
@@ -65,10 +72,10 @@ export default function LandingPage() {
 
             <ul className="mt-12 grid gap-2 text-sm md:grid-cols-2">
               {[
-                ["Live chains", "CBOE delayed quotes — no auth, full chain in one call."],
+                ["Trade ideas", "Your view in, ranked trades out — each leg at its own market IV."],
                 ["3-D vol surface", "Moneyness × time × IV, with smile and 25Δ skew breakout."],
                 ["Net Greeks", "Δ, Γ, Θ, ν aggregated across every leg."],
-                ["Typed end-to-end", "Next.js 15, TypeScript, server-rendered routes."],
+                ["Typed end-to-end", "Next.js 16, TypeScript, server-rendered routes."],
               ].map(([t, d]) => (
                 <li key={t} className="flex gap-3">
                   <span
