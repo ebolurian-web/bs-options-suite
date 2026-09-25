@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { expiryPnl, scenarioPnl, type IdeaLeg } from "@/lib/trade-ideas";
+import { fmtSigned } from "@/lib/format";
+import { scenarioPnl, type PositionLeg } from "@/lib/position";
 
 /**
  * Profit & loss chart for one trade: the expiry payoff (dashed) and a
@@ -25,10 +26,11 @@ export function PnlChart({
   scenarioLabel,
   domain,
 }: {
-  legs: IdeaLeg[];
+  legs: PositionLeg[];
   name: string;
   spot: number;
-  target: number;
+  /** The user's target price, if any. */
+  target?: number | null;
   expectedMove: number;
   breakEvens: number[];
   /** Years left to expiry on the scenario date. */
@@ -61,7 +63,7 @@ export function PnlChart({
     const N = 160;
     const xs: number[] = [];
     for (let i = 0; i <= N; i++) xs.push(domain.lo + ((domain.hi - domain.lo) * i) / N);
-    const exp = xs.map((x) => expiryPnl(legs, x));
+    const exp = xs.map((x) => scenarioPnl(legs, x, 0, ivShift, r));
     const now = xs.map((x) => scenarioPnl(legs, x, tRemaining, ivShift, r));
     let yMin = Math.min(0, ...exp, ...now);
     let yMax = Math.max(0, ...exp, ...now);
@@ -101,7 +103,7 @@ export function PnlChart({
     const pts = new Set<number>();
     for (let i = 0; i <= 8; i++) pts.add(+(domain.lo + ((domain.hi - domain.lo) * i) / 8).toFixed(2));
     pts.add(+spot.toFixed(2));
-    pts.add(+target.toFixed(2));
+    if (target != null) pts.add(+target.toFixed(2));
     return Array.from(pts).sort((a, b) => a - b);
   }, [domain.lo, domain.hi, spot, target]);
 
@@ -183,7 +185,7 @@ export function PnlChart({
         )}
 
         {/* target */}
-        {inDomain(target) && Math.abs(target - spot) > 1e-9 && (
+        {target != null && inDomain(target) && Math.abs(target - spot) > 1e-9 && (
           <g>
             <line x1={sx(target)} x2={sx(target)} y1={pad.t} y2={pad.t + ih} style={{ stroke: "var(--color-warn)", strokeWidth: 1.5 }} />
             <text
@@ -254,7 +256,7 @@ export function PnlChart({
               <tr key={p} className="border-t" style={{ borderColor: "var(--color-border)" }}>
                 <th scope="row" className="py-1 text-left font-normal">${p.toFixed(2)}</th>
                 <td className="py-1 text-right">{fmtSigned(scenarioPnl(legs, p, tRemaining, ivShift, r))}</td>
-                <td className="py-1 text-right">{fmtSigned(expiryPnl(legs, p))}</td>
+                <td className="py-1 text-right">{fmtSigned(scenarioPnl(legs, p, 0, ivShift, r))}</td>
               </tr>
             ))}
           </tbody>
@@ -277,13 +279,6 @@ function niceTicks(lo: number, hi: number, target: number): number[] {
 }
 
 const MINUS = "−";
-
-export function fmtSigned(n: number): string {
-  if (!Number.isFinite(n)) return n > 0 ? "Unlimited" : `${MINUS}Unlimited`;
-  const r = Math.round(n);
-  const abs = Math.abs(r).toLocaleString("en-US");
-  return r > 0 ? `+$${abs}` : r < 0 ? `${MINUS}$${abs}` : "$0";
-}
 
 function fmtSignedShort(n: number): string {
   const abs = Math.abs(n);
