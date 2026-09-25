@@ -20,24 +20,22 @@ Black-Scholes options pricing suite with live market data, a 3-D volatility surf
 - "Is it cheap?" verdict comparing ATM IV to 20-day realized vol and its 1-year rank
 - Greeks in plain dollars ("SPY +$1 → +$26"), shareable URLs, and one-click hand-off to the Strategy Builder
 
-### Pricer (`/pricer`)
-- Black-Scholes pricing with Merton dividend extension, full Greeks (Δ Γ Θ ν)
-- Live options chains via CBOE public delayed quotes (no auth, single-call full chain)
-- Newton-Raphson implied volatility solver with bisection fallback
-- **3-D volatility surface** — moneyness × DTE × IV, with per-expiry smile and 25Δ skew/term-structure analytics
-- **Historical vol cone** — rolling realized vol percentiles (20/60/120-day) vs current IV, plus HV rank and percentile
-- Interactive payoff diagram with hover crosshair
-- Plain-English explanations for every Greek
-- `Manual overrides` disclosure for scenario analysis
+### Option Explorer (`/pricer`)
+- Live option chain: pick an expiration, then click any call or put (price, IV and delta per strike, in-the-money shading, spot marker)
+- Buy/Sell and Call/Put switches; cost, break-even, chance of profit, chance of finishing in the money, max loss/gain
+- Shared P&L chart with price / date / IV sliders
+- "Is the price fair?": contract IV vs 20-day realized vol, market mid vs Black-Scholes at ATM IV, with a plain-English skew note
+- Greeks in dollars per contract, plus plain-English explanations; editable rate and dividend yield
+- Volatility section: **3-D surface**, smile, 25Δ skew and term structure, and the **historical vol cone**
+- Newton-Raphson IV solver with bisection fallback where the provider IV is missing
 
 ### Strategy Builder (`/strategies`)
-- 11 pre-built strategies (Long Call/Put, Covered Call, Iron Condor, Butterflies, Straddle/Strangle, etc.)
-- Editable legs table with per-cell inputs
-- Combined payoff at expiry with hover crosshair
-- Log-normal probability distribution chart
-- **Net position Greeks** aggregated across all legs (Δ, Γ, Θ, ν)
-- **Shareable URLs** via `?s=base64` encoding
-- **Saved strategies** persisted to localStorage
+- Templates grouped by view (bullish, bearish, neutral, big move, income) that snap to listed strikes ~45 days out
+- Leg editor: side, quantity, listed contract, expiry, and a price that **follows the live mid** until you type over it
+- Mixed expirations (calendars/diagonals) and stock legs supported; each leg marked at its own IV
+- Net cost/credit, max gain/loss, break-evens, chance of profit; P&L chart with scenario sliders or a "where it could land" probability view
+- Position Greeks in dollars with a one-line read of what the trade is betting on
+- **Shareable URLs** (`?s=`) and **saved strategies** in localStorage (reopen at live prices)
 
 ---
 

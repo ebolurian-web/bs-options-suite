@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
-import { StrategiesView } from "./strategies-view";
+import { BuilderView } from "./builder-view";
 
 export const metadata: Metadata = {
   title: "Strategy Builder",
@@ -22,7 +22,7 @@ export default function StrategiesPage() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-[1400px] px-6 py-8"
+        className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-6 md:py-8"
       >
         <header className="mb-6">
           <p
@@ -35,13 +35,13 @@ export default function StrategiesPage() {
             className="mt-1 text-2xl font-bold tracking-tight md:text-3xl"
             style={{ fontFamily: "var(--font-libre), serif" }}
           >
-            Multi-Leg Strategy Builder
+            Build any options position
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--color-fg-muted)" }}>
-            Build a position, see the combined payoff at expiry, and watch how net Greeks move as you edit.
+            Combine calls, puts, and shares at live prices. See what the position can make or lose, on any date, and what it is really betting on.
           </p>
         </header>
-        <StrategiesView />
+        <BuilderView />
       </main>
     </>
   );

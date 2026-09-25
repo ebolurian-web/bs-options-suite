@@ -59,14 +59,14 @@ export default function LandingPage() {
                 className="press-scale surface-1 tile-hover rounded-md px-5 py-2.5 text-sm font-semibold transition-colors"
                 style={{ color: "var(--color-fg-default)" }}
               >
-                Pricer
+                Option explorer
               </Link>
               <Link
                 href="/strategies"
                 className="press-scale surface-1 tile-hover rounded-md px-5 py-2.5 text-sm font-semibold transition-colors"
                 style={{ color: "var(--color-fg-default)" }}
               >
-                Strategy Builder
+                Strategy builder
               </Link>
             </div>
 

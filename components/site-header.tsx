@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLinks } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -42,27 +43,7 @@ export function SiteHeader() {
           >
             Home
           </Link>
-          <Link
-            href="/trade"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--color-fg-muted)" }}
-          >
-            Trade ideas
-          </Link>
-          <Link
-            href="/pricer"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--color-fg-muted)" }}
-          >
-            Pricer
-          </Link>
-          <Link
-            href="/strategies"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--color-fg-muted)" }}
-          >
-            Strategies
-          </Link>
+          <NavLinks />
           <ThemeToggle />
         </nav>
       </div>

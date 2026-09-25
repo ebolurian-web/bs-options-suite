@@ -4,22 +4,19 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiClientError, fetchChain, fetchHistory } from "@/lib/client";
 import { encodeStrategy } from "@/lib/strategy-codec";
+import { GreekRow, VerdictCard } from "@/components/position-cards";
+import { ScenarioPanel } from "@/components/scenario-panel";
+import { fmtDate, fmtShort, fmtSigned, fmtStrike, parseIso, usd } from "@/lib/format";
+import { daysToExpiration, dollarGreeks, type PositionLeg } from "@/lib/position";
 import {
   VIEWS,
   buildIdeas,
-  daysToExpiration,
   defaultExpiration,
   defaultTarget,
-  dollarGreeks,
-  expiryPnl,
-  scenarioPnl,
-  volVerdict,
-  type IdeaLeg,
   type TradeIdea,
   type View,
 } from "@/lib/trade-ideas";
 import type { HistoricalSeries, OptionChain } from "@/lib/types";
-import { PnlChart, fmtSigned } from "./pnl-chart";
 
 /** Risk-free rate used for scenario pricing. Editable on the Pricer page. */
 const R = 0.045;
@@ -382,22 +379,19 @@ export function TradeView() {
 
         {result && selected && chain && (
           <ScenarioPanel
-            idea={selected}
+            title={`Profit & loss · ${selected.name}`}
+            legs={selected.legs}
             ticker={chain.ticker}
             spot={result.spot}
             target={targetValid ? target : result.spot}
-            view={view}
             expiry={expiry!}
             daysLeft={daysLeft}
             T={result.T}
             atmIv={result.atmIv}
             expectedMove={result.expectedMove}
-            scenarioPrice={sc.price}
-            setScenarioPrice={(price) => patchScenario({ price })}
-            dayOffset={sc.day}
-            setDayOffset={(day) => patchScenario({ day })}
-            ivShiftPts={sc.iv}
-            setIvShiftPts={(iv) => patchScenario({ iv })}
+            r={R}
+            scenario={sc}
+            onScenario={patchScenario}
           />
         )}
       </section>
@@ -407,7 +401,7 @@ export function TradeView() {
         <h2 id="h-worth" className={eyebrow} style={{ color: "var(--color-fg-muted)" }}>
           3 · Is it worth it?
         </h2>
-        {result && <VerdictCard atmIv={result.atmIv} history={history} view={view} />}
+        {result && <VerdictCard atmIv={result.atmIv} bars={history?.bars ?? null} view={view} />}
         {result && selected && chain && (
           <>
             <SummaryCard idea={selected} ticker={chain.ticker} expiry={expiry!} spot={result.spot} T={result.T} />
@@ -499,226 +493,7 @@ function IdeaCard({
   );
 }
 
-// ── Chart + scenario sliders ───────────────────────────────────────────
-
-function ScenarioPanel(props: {
-  idea: TradeIdea;
-  ticker: string;
-  spot: number;
-  target: number;
-  view: View;
-  expiry: string;
-  daysLeft: number;
-  T: number;
-  atmIv: number;
-  expectedMove: number;
-  scenarioPrice: number;
-  setScenarioPrice: (n: number) => void;
-  dayOffset: number;
-  setDayOffset: (n: number) => void;
-  ivShiftPts: number;
-  setIvShiftPts: (n: number) => void;
-}) {
-  const { idea, ticker, spot, target, expiry, daysLeft, T, atmIv, expectedMove } = props;
-  const { scenarioPrice, dayOffset, ivShiftPts } = props;
-
-  const domain = useMemo(() => {
-    const ks = idea.legs.map((l) => l.strike);
-    const reach = Math.max(expectedMove * 2.2, spot * 0.04);
-    const lo = Math.min(spot - reach, ...ks.map((k) => k - expectedMove * 0.6), target - expectedMove * 0.4);
-    const hi = Math.max(spot + reach, ...ks.map((k) => k + expectedMove * 0.6), target + expectedMove * 0.4);
-    return { lo: Math.max(0.01, lo), hi };
-  }, [idea, spot, target, expectedMove]);
-
-  const tRemaining = Math.max(0, T - dayOffset / 365.25);
-  const ivShift = ivShiftPts / 100;
-  const scenarioDate = addDays(dayOffset);
-  const atExpiry = dayOffset >= daysLeft;
-  const scenarioLabel = atExpiry ? fmtDate(expiry) : fmtShort(scenarioDate);
-  const pnl = scenarioPnl(idea.legs, scenarioPrice, atExpiry ? 0 : tRemaining, ivShift, R);
-  const pnlExp = expiryPnl(idea.legs, scenarioPrice);
-  const priceStep = spot >= 100 ? 0.5 : spot >= 20 ? 0.1 : 0.05;
-  const ivMin = -Math.floor(atmIv * 100 - 1);
-  const ivText =
-    ivShiftPts === 0
-      ? `${(atmIv * 100).toFixed(1)}% · unchanged`
-      : `${((atmIv + ivShift) * 100).toFixed(1)}% · ${ivShiftPts > 0 ? "+" : "−"}${Math.abs(ivShiftPts).toFixed(1)} pts`;
-
-  return (
-    <section aria-labelledby="h-chart" className="surface-1 flex flex-col gap-3 p-4 md:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="h-chart" className="text-[0.95rem] font-semibold">
-          Profit &amp; loss · {idea.name}
-        </h3>
-        <div className="flex flex-wrap gap-4 text-xs" style={{ color: "var(--color-fg-muted)" }} aria-hidden="true">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0.5 w-4" style={{ background: "var(--color-accent)" }} />
-            On {scenarioLabel}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: "var(--chart-4)" }} />
-            At expiry
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-3" style={{ background: "var(--color-fg-default)", opacity: 0.1 }} />
-            1σ expected move
-          </span>
-        </div>
-      </div>
-
-      <PnlChart
-        legs={idea.legs}
-        name={idea.name}
-        spot={spot}
-        target={target}
-        expectedMove={expectedMove}
-        breakEvens={idea.breakEvens}
-        tRemaining={atExpiry ? 0 : tRemaining}
-        ivShift={ivShift}
-        r={R}
-        scenarioPrice={scenarioPrice}
-        scenarioLabel={scenarioLabel}
-        domain={domain}
-      />
-
-      <div className="grid gap-4 border-t pt-3 md:grid-cols-3 md:gap-5" style={{ borderColor: "var(--color-border)" }}>
-        <Slider
-          id="sc-price"
-          label="Stock price"
-          valueText={`$${scenarioPrice.toFixed(2)}`}
-          min={+domain.lo.toFixed(2)}
-          max={+domain.hi.toFixed(2)}
-          step={priceStep}
-          value={scenarioPrice}
-          onChange={props.setScenarioPrice}
-        />
-        <Slider
-          id="sc-date"
-          label="Date"
-          valueText={atExpiry ? `${fmtShort(scenarioDate)} · expiry` : `${fmtShort(scenarioDate)} · ${daysLeft - dayOffset}d left`}
-          min={0}
-          max={Math.max(0, daysLeft)}
-          step={1}
-          value={dayOffset}
-          onChange={props.setDayOffset}
-        />
-        <Slider
-          id="sc-iv"
-          label="Implied vol"
-          valueText={ivText}
-          min={ivMin}
-          max={30}
-          step={0.5}
-          value={ivShiftPts}
-          onChange={props.setIvShiftPts}
-        />
-      </div>
-
-      <p className="text-[0.85rem] leading-relaxed" style={{ color: "var(--color-fg-muted)" }}>
-        If {ticker} is at <strong style={{ color: "var(--color-fg-default)" }}>${scenarioPrice.toFixed(2)}</strong> on{" "}
-        <strong style={{ color: "var(--color-fg-default)" }}>{scenarioLabel}</strong>
-        {atExpiry ? "" : ivShiftPts === 0 ? " with implied vol unchanged" : ` with implied vol ${ivShiftPts > 0 ? "up" : "down"} ${Math.abs(ivShiftPts)} pts`}, this trade is{" "}
-        {atExpiry ? "" : "worth about "}
-        <strong style={{ color: pnl >= 0 ? "var(--color-accent)" : "var(--color-error)" }}>{fmtSigned(pnl)}</strong>.
-        {!atExpiry && (
-          <>
-            {" "}
-            Held to {fmtShort(parseIso(expiry))} at that price: <strong style={{ color: "var(--color-fg-default)" }}>{fmtSigned(pnlExp)}</strong>.
-          </>
-        )}
-      </p>
-    </section>
-  );
-}
-
-function Slider({
-  id,
-  label: text,
-  valueText,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  valueText: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onChange: (n: number) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex justify-between gap-2 text-xs">
-        <label htmlFor={id} className="font-semibold" style={{ color: "var(--color-fg-muted)" }}>
-          {text}
-        </label>
-        <span className="font-mono tabular-nums" aria-hidden="true">
-          {valueText}
-        </span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        aria-valuetext={valueText}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="h-6 w-full"
-        style={{ accentColor: "var(--color-accent)" }}
-      />
-    </div>
-  );
-}
-
 // ── Right rail cards ───────────────────────────────────────────────────
-
-function VerdictCard({ atmIv, history, view }: { atmIv: number; history: HistoricalSeries | null; view: View }) {
-  const v = useMemo(() => volVerdict(atmIv, history?.bars ?? null, view), [atmIv, history, view]);
-  const badge =
-    v.tone === "pricey"
-      ? { bg: "var(--color-warn)", fg: "#0a0a0a" }
-      : v.tone === "cheap"
-        ? { bg: "var(--color-accent)", fg: "#0a0a0a" }
-        : { bg: "var(--color-surface-3)", fg: "var(--color-fg-default)" };
-  return (
-    <section aria-labelledby="h-verdict" className="surface-1 flex flex-col gap-3 p-4">
-      <span className="self-start rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: badge.bg, color: badge.fg }}>
-        {v.label}
-      </span>
-      <h3 id="h-verdict" className="text-[1.02rem] font-bold leading-snug" style={{ fontFamily: "var(--font-libre), serif" }}>
-        {v.headline}
-      </h3>
-      <dl className="grid grid-cols-3 gap-2 font-mono text-sm tabular-nums">
-        <Chip term="Implied" value={`${(v.impliedVol * 100).toFixed(1)}%`} />
-        <Chip term="Realized 20d" value={v.realizedVol20 != null ? `${(v.realizedVol20 * 100).toFixed(1)}%` : "—"} />
-        <Chip term="IV rank" value={v.ivRank != null ? Math.round(v.ivRank).toString() : "—"} />
-      </dl>
-      <p className="text-[0.82rem] leading-relaxed" style={{ color: "var(--color-fg-muted)" }}>
-        {v.advice}{" "}
-        <Link href="/pricer" className="underline" style={{ color: "var(--color-accent)" }}>
-          See the vol surface &amp; cone
-        </Link>
-      </p>
-    </section>
-  );
-}
-
-function Chip({ term, value }: { term: string; value: string }) {
-  return (
-    <div className="rounded-md px-2 py-1.5" style={{ background: "var(--color-surface-2)" }}>
-      <dt className="font-sans text-[0.68rem]" style={{ color: "var(--color-fg-subtle)" }}>
-        {term}
-      </dt>
-      <dd>{value}</dd>
-    </div>
-  );
-}
 
 function SummaryCard({
   idea,
@@ -771,17 +546,6 @@ function SummaryCard({
         <GreekRow label="Implied vol +1 point" value={g.perVolPoint} />
       </div>
     </section>
-  );
-}
-
-function GreekRow({ label: text, value }: { label: string; value: number }) {
-  return (
-    <div className="flex justify-between">
-      <span style={{ color: "var(--color-fg-muted)" }}>{text}</span>
-      <span className="font-mono tabular-nums" style={{ color: value < -0.5 ? "var(--color-error)" : "var(--color-fg-default)" }}>
-        {fmtSigned(value)}
-      </span>
-    </div>
   );
 }
 
@@ -875,34 +639,12 @@ function LegsCard({
 
 // ── Formatting helpers ─────────────────────────────────────────────────
 
-function usd(n: number): string {
-  return `$${Math.round(n).toLocaleString("en-US")}`;
+function strikeLabel(l: PositionLeg): string {
+  return `${fmtStrike(l.strike)}${l.type === "call" ? "C" : "P"}`;
 }
 
-function strikeLabel(l: IdeaLeg): string {
-  const k = Number.isInteger(l.strike) ? String(l.strike) : l.strike.toFixed(2).replace(/0$/, "");
-  return `${k}${l.type === "call" ? "C" : "P"}`;
-}
-
-function legShort(l: IdeaLeg): string {
+function legShort(l: PositionLeg): string {
   return `${l.action === "buy" ? "Buy" : "Sell"}${l.qty > 1 ? ` ${l.qty}×` : ""} ${strikeLabel(l)}`;
-}
-
-function parseIso(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d, 12));
-}
-
-function addDays(n: number): Date {
-  return new Date(Date.now() + n * 86400_000);
-}
-
-function fmtDate(iso: string): string {
-  return parseIso(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
-}
-
-function fmtShort(d: Date): string {
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 function targetHint(view: View, spot: number | null, target: number | null, em: number | null): string {

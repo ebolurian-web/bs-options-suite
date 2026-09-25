@@ -12,9 +12,26 @@
  *   deterministic, so numbers don't flicker between renders.
  */
 
-import { normPdf, priceBS, solveIV } from "./bs";
+import { priceBS, solveIV } from "./bs";
+import {
+  daysToExpiration,
+  expiryPnl,
+  netCost,
+  payoffProfile,
+  probabilityOfProfit,
+  type PositionLeg,
+} from "./position";
 import type { HistoricalBar, OptionChain, OptionContract } from "./types";
 import { hvRank, rollingRealizedVol } from "./vol-cone";
+
+export {
+  daysToExpiration,
+  dollarGreeks,
+  expiryPnl,
+  scenarioPnl,
+  type DollarGreeks,
+  type PositionLeg as IdeaLeg,
+} from "./position";
 
 export type View = "up" | "down" | "flat" | "big";
 
@@ -25,24 +42,11 @@ export const VIEWS: Array<{ id: View; label: string; short: string }> = [
   { id: "big", label: "Move big", short: "Big" },
 ];
 
-export type IdeaLeg = {
-  action: "buy" | "sell";
-  type: "call" | "put";
-  strike: number;
-  qty: number;
-  /** Per-share market price (bid/ask mid, else last). */
-  premium: number;
-  /** Per-share Black-Scholes price at the expiry's ATM IV (flat-σ model). */
-  modelPrice: number | null;
-  /** This contract's own implied volatility, decimal. */
-  iv: number;
-};
-
 export type TradeIdea = {
   id: string;
   name: string;
   blurb: string;
-  legs: IdeaLeg[];
+  legs: PositionLeg[];
   /** Net cash at entry in dollars: positive = you pay (debit), negative = you collect (credit). */
   cost: number;
   /** Worst case at expiry, as a positive dollar amount. Infinity if uncapped. */
@@ -70,15 +74,6 @@ export type IdeasResult = {
   expectedMove: number;
 };
 
-const MULT = 100;
-
-// ── Dates ────────────────────────────────────────────────────────────
-
-/** Days until 4pm ET (≈20:00 UTC) on the expiration date. */
-export function daysToExpiration(iso: string, nowMs = Date.now()): number {
-  const [y, m, d] = iso.split("-").map(Number);
-  return Math.max(0, (Date.UTC(y, m - 1, d, 20) - nowMs) / 86400_000);
-}
 
 /** Pick the listed expiry closest to ~45 days out, skipping the very front. */
 export function defaultExpiration(expirations: string[], nowMs = Date.now()): string | null {
@@ -97,109 +92,9 @@ export function defaultExpiration(expirations: string[], nowMs = Date.now()): st
   return best;
 }
 
-// ── P&L math ─────────────────────────────────────────────────────────
-
-const dirOf = (l: IdeaLeg) => (l.action === "buy" ? 1 : -1);
-
-export function netCost(legs: IdeaLeg[]): number {
-  return legs.reduce((s, l) => s + dirOf(l) * l.premium * l.qty * MULT, 0);
-}
-
-export function expiryPnl(legs: IdeaLeg[], S: number): number {
-  let pnl = 0;
-  for (const l of legs) {
-    const intrinsic = l.type === "call" ? Math.max(0, S - l.strike) : Math.max(0, l.strike - S);
-    pnl += dirOf(l) * (intrinsic - l.premium) * l.qty * MULT;
-  }
-  return pnl;
-}
-
-/**
- * Mark-to-model P&L at an earlier date: each leg re-priced with Black-Scholes
- * at its own IV (shifted by `ivShift`, in decimal points) with `tYears` left.
- */
-export function scenarioPnl(
-  legs: IdeaLeg[],
-  S: number,
-  tYears: number,
-  ivShift: number,
-  r: number,
-  q = 0,
-): number {
-  if (tYears <= 1e-6) return expiryPnl(legs, S);
-  let pnl = 0;
-  for (const l of legs) {
-    const res = priceBS({ S, K: l.strike, T: tYears, r, q, sigma: Math.max(0.01, l.iv + ivShift) });
-    if (!res) continue;
-    const value = l.type === "call" ? res.call : res.put;
-    pnl += dirOf(l) * (value - l.premium) * l.qty * MULT;
-  }
-  return pnl;
-}
-
-/** Exact extremes and break-evens of the piecewise-linear expiry payoff. */
-export function payoffProfile(legs: IdeaLeg[]): {
-  maxLoss: number;
-  maxGain: number;
-  breakEvens: number[];
-} {
-  const strikes = Array.from(new Set(legs.map((l) => l.strike))).sort((a, b) => a - b);
-  const top = (strikes[strikes.length - 1] ?? 1) * 4;
-  const xs = [0, ...strikes, top];
-  const ys = xs.map((x) => expiryPnl(legs, x));
-  // Slope beyond the highest strike: only calls contribute.
-  const tailSlope = legs.reduce(
-    (s, l) => s + (l.type === "call" ? dirOf(l) * l.qty * MULT : 0),
-    0,
-  );
-  const finiteMax = Math.max(...ys);
-  const finiteMin = Math.min(...ys);
-  const breakEvens: number[] = [];
-  for (let i = 1; i < xs.length; i++) {
-    const a = ys[i - 1];
-    const b = ys[i];
-    if ((a < 0 && b >= 0) || (a > 0 && b <= 0)) {
-      const t = a / (a - b);
-      const be = xs[i - 1] + t * (xs[i] - xs[i - 1]);
-      if (!breakEvens.some((x) => Math.abs(x - be) < 1e-6)) breakEvens.push(be);
-    }
-  }
-  return {
-    maxGain: tailSlope > 0 ? Infinity : finiteMax,
-    maxLoss: tailSlope < 0 ? Infinity : Math.max(0, -finiteMin),
-    breakEvens,
-  };
-}
-
-/**
- * P(expiry P&L > 0) under the risk-neutral log-normal with volatility `sigma`.
- * Numerical integration over ±6σ — smooth and deterministic.
- */
-export function probabilityOfProfit(
-  legs: IdeaLeg[],
-  spot: number,
-  sigma: number,
-  T: number,
-  r: number,
-  q = 0,
-): number {
-  if (!(T > 0) || !(sigma > 0)) return expiryPnl(legs, spot) > 0 ? 1 : 0;
-  const sd = sigma * Math.sqrt(T);
-  const mu = Math.log(spot) + (r - q - 0.5 * sigma * sigma) * T;
-  const N = 1200;
-  const lo = -6;
-  const dz = 12 / N;
-  let p = 0;
-  for (let i = 0; i < N; i++) {
-    const z = lo + (i + 0.5) * dz;
-    if (expiryPnl(legs, Math.exp(mu + sd * z)) > 0) p += normPdf(z) * dz;
-  }
-  return Math.min(1, Math.max(0, p));
-}
-
 // ── Chain helpers ────────────────────────────────────────────────────
 
-const priceOf = (c: OptionContract): number | null => {
+export const priceOf = (c: OptionContract): number | null => {
   const px = c.mid ?? (c.bid != null && c.ask != null ? (c.bid + c.ask) / 2 : null) ?? c.last;
   return px != null && px > 0 ? px : null;
 };
@@ -261,7 +156,7 @@ export function atmImpliedVol(chain: OptionChain, expiry: string, r: number, q =
   return chain.quote.iv30;
 }
 
-function contractIv(c: OptionContract, spot: number, T: number, r: number, q: number): number | null {
+export function contractIv(c: OptionContract, spot: number, T: number, r: number, q: number): number | null {
   if (c.iv != null && c.iv > 0.005 && c.iv < 5) return c.iv;
   const px = priceOf(c);
   if (px == null || T <= 0) return null;
@@ -460,7 +355,7 @@ export function buildIdeas({
     const keys = spec.legs.map((l) => `${l.type}:${l.strike}`);
     // Degenerate if a strike was reused where two distinct contracts are needed.
     if (new Set(keys).size !== keys.length) continue;
-    const legs: IdeaLeg[] = [];
+    const legs: PositionLeg[] = [];
     let ok = true;
     for (const l of spec.legs) {
       const c = book.get(l.type, l.strike as number);
@@ -527,32 +422,6 @@ export function defaultTarget(view: View, spot: number, expectedMove: number): n
           : spot + expectedMove;
   const step = spot >= 50 ? 1 : 0.5;
   return Math.max(step, Math.round(raw / step) * step);
-}
-
-// ── Position Greeks, in dollars ──────────────────────────────────────
-
-export type DollarGreeks = {
-  /** $ change for a +$1 move in the stock. */
-  perDollar: number;
-  /** $ change per calendar day, all else equal. */
-  perDay: number;
-  /** $ change per +1 point of implied vol. */
-  perVolPoint: number;
-};
-
-export function dollarGreeks(legs: IdeaLeg[], spot: number, T: number, r: number, q = 0): DollarGreeks {
-  let d = 0,
-    th = 0,
-    v = 0;
-  for (const l of legs) {
-    const res = priceBS({ S: spot, K: l.strike, T, r, q, sigma: l.iv });
-    if (!res) continue;
-    const m = dirOf(l) * l.qty * MULT;
-    d += m * (l.type === "call" ? res.greeks.deltaCall : res.greeks.deltaPut);
-    th += m * (l.type === "call" ? res.greeks.thetaCallPerDay : res.greeks.thetaPutPerDay);
-    v += m * res.greeks.vegaPer1Pct;
-  }
-  return { perDollar: d, perDay: th, perVolPoint: v };
 }
 
 // ── "Is it cheap?" verdict ───────────────────────────────────────────
