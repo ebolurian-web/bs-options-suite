@@ -14,11 +14,11 @@ export function SiteHeader() {
         borderColor: "var(--color-border)",
       }}
     >
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-6 py-3">
+      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:px-6">
         <div className="flex items-center gap-6">
           <a
             href="https://bolurian.com"
-            className="inline-flex items-center border-2 px-3 py-1.5 text-base font-normal transition-colors"
+            className="inline-flex items-center border-2 px-2 py-1 text-sm font-normal transition-colors sm:px-3 sm:py-1.5 sm:text-base"
             style={{
               fontFamily: "var(--font-libre), serif",
               borderColor: "var(--color-fg-default)",
@@ -34,13 +34,20 @@ export function SiteHeader() {
             / BS Suite
           </span>
         </div>
-        <nav aria-label="Primary" className="flex items-center gap-5 text-sm">
+        <nav aria-label="Primary" className="flex items-center gap-3 whitespace-nowrap text-[0.8rem] sm:gap-5 sm:text-sm">
           <Link
             href="/"
-            className="transition-colors hover:underline"
+            className="hidden transition-colors hover:underline sm:inline"
             style={{ color: "var(--color-fg-muted)" }}
           >
             Home
+          </Link>
+          <Link
+            href="/trade"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--color-fg-muted)" }}
+          >
+            Trade ideas
           </Link>
           <Link
             href="/pricer"
